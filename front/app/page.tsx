@@ -1,69 +1,137 @@
-import Image from "next/image";
+import Link from "next/link";
+
+// Fotos do carrossel do hero.
+// Troque o "src" pelo caminho real assim que as imagens definitivas
+// estiverem em front/public/images/.
+const fotosHero = [
+  { nome: "Represa", src: "/images/represa.jpg" },
+  { nome: "Igreja Matriz", src: "/images/igreja-matriz.jpg" },
+  { nome: "Prédio histórico 1894", src: "/images/predio-1894.jpg" },
+  { nome: "Voo livre", src: "/images/voo-livre.jpg" },
+];
+
+// Logos institucionais (3 níveis, conforme documento de especificação).
+const logos = [
+  { nome: "Observatório", src: "/images/logo-observatorio.png" },
+  { nome: "Santa Rita do Sapucaí", src: "/images/logo-srs.png" },
+  { nome: "Prefeitura Municipal", src: "/images/logo-prefeitura.png" },
+  { nome: "SMCELT", src: "/images/logo-smcelt.png" },
+  { nome: "COMTUR", src: "/images/logo-comtur.png" },
+  { nome: "Caminhos da Mantiqueira", src: "/images/logo-mantiqueira.png" },
+  { nome: "Minas Gerais", src: "/images/logo-minas.png" },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+    <main className="min-h-screen bg-gradient-to-br from-blue-800 via-violet-600 to-fuchsia-600 text-white">
+      {/* Título e subtítulo */}
+      <section className="text-center pt-12 pb-8 px-6">
+        <h1 className="font-serif text-4xl md:text-5xl font-bold tracking-wide mb-3">
+          Observatório de Turismo SRS
+        </h1>
+        <p className="text-white/90 text-sm md:text-base">
+          Consulte indicadores turísticos, dashboards e relatórios da região
+          de Santa Rita do Sapucaí
+        </p>
+      </section>
+
+      {/* Hero: carrossel + card de destaque */}
+      <section className="px-6 pb-10 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 max-w-6xl mx-auto">
+        {/* Carrossel de fotos */}
+        <div className="flex rounded-xl overflow-hidden h-72 lg:h-auto">
+          {fotosHero.map((foto) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={foto.nome}
+              src={foto.src}
+              alt={foto.nome}
+              className="flex-1 w-1/4 h-full object-cover"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          ))}
         </div>
-      </main>
-    </div>
+
+        {/* Card "O Vale da Eletrônica" */}
+        <div className="bg-white/10 rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <h2 className="font-serif text-2xl font-bold mb-4">
+              O Vale da Eletrônica
+            </h2>
+            <p className="text-white/90 text-sm leading-relaxed mb-6">
+              Cidade no sul de Minas Gerais que une tradição mineira e alta
+              tecnologia. Polo de inovação, criatividade, empreendedorismo e
+              hospitalidade.
+            </p>
+            <div className="flex flex-wrap gap-3 mb-6">
+              <Link
+                href="/dashboard"
+                className="bg-blue-700 hover:bg-blue-800 transition text-white font-medium text-sm rounded-full px-5 py-2"
+              >
+                Ver dashboard
+              </Link>
+              <Link
+                href="/login"
+                className="bg-white hover:bg-gray-100 transition text-blue-800 font-medium text-sm rounded-full px-5 py-2"
+              >
+                Login ADM
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 text-center border-t border-white/20 pt-4">
+            <div>
+              <p className="text-2xl font-bold text-amber-300">12+</p>
+              <p className="text-xs text-white/70">Indicadores</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-cyan-300">50+</p>
+              <p className="text-xs text-white/70">Relatórios</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">5</p>
+              <p className="text-xs text-white/70">Dashboards</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr className="border-white/20 max-w-6xl mx-auto" />
+
+      {/* Texto institucional */}
+      <section className="text-center px-6 py-12 max-w-3xl mx-auto">
+        <h3 className="font-serif text-xl font-bold text-amber-300 mb-4">
+          Santa Rita do Sapucaí: O Vale da Eletrônica
+        </h3>
+        <p className="text-white/90 text-sm leading-relaxed">
+          Conhecida carinhosamente como o &quot;Vale da Eletrônica&quot;,
+          Santa Rita do Sapucaí é uma encantadora cidade no sul de Minas
+          Gerais que consegue unir, de forma única, a tradição mineira e a
+          alta tecnologia. Cercada pelas montanhas da Serra da Mantiqueira, a
+          cidade é um polo de inovação que respira criatividade,
+          empreendedorismo e hospitalidade.
+        </p>
+      </section>
+
+      {/* Realização e apoio institucional */}
+      <section className="px-6 pb-10">
+        <p className="text-center text-xs tracking-widest text-white/60 mb-6">
+          REALIZAÇÃO E APOIO INSTITUCIONAL
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-8 max-w-5xl mx-auto">
+          {logos.map((logo) => (
+            <div key={logo.nome} className="flex flex-col items-center gap-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logo.src} alt={logo.nome} className="h-10 object-contain" />
+              <span className="text-[11px] text-white/70">{logo.nome}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Rodapé */}
+      <footer className="bg-black/20 text-center text-xs text-white/70 py-4">
+        © 2026 Observatório de Turismo de Santa Rita do Sapucaí - Todos os
+        direitos reservados
+      </footer>
+    </main>
   );
 }
