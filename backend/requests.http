@@ -1,0 +1,67 @@
+### Arquivo para testar a API pelo VS Code (extensão "REST Client")
+@api = http://localhost:3333/api
+
+### Status
+GET {{api}}/health
+
+### Login (copie o token da resposta para a variável abaixo)
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "admin@observatorio.local", "senha": "admin123" }
+
+###
+@token = {{login.response.body.token}}
+
+### Usuário logado
+GET {{api}}/auth/me
+Authorization: Bearer {{token}}
+
+### Categorias (setores) para os filtros
+GET {{api}}/indicadores/categorias
+
+### Indicadores de um setor
+GET {{api}}/indicadores?categoria=Hospedagem
+
+### Cards do dashboard (jan–set/2026, com variação vs. período anterior)
+GET {{api}}/dashboard/resumo?inicio=2026-01&fim=2026-09
+
+### Série mensal para o gráfico
+GET {{api}}/dashboard/serie?indicadorId=1&inicio=2026-01&fim=2026-12
+
+### Lançar um valor (painel admin)
+POST {{api}}/registros
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "indicadorId": 1, "valor": 21000, "periodo": "2026-10" }
+
+### Listar registros com filtro
+GET {{api}}/registros?categoria=Leitos&inicio=2026-01&fim=2026-09
+
+### Listar relatórios públicos
+GET {{api}}/relatorios
+
+### Publicar relatório (PDF)
+POST {{api}}/relatorios
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=limite
+
+--limite
+Content-Disposition: form-data; name="titulo"
+
+Relatório OT nº 004/2025
+--limite
+Content-Disposition: form-data; name="ano"
+
+2025
+--limite
+Content-Disposition: form-data; name="arquivo"; filename="relatorio.pdf"
+Content-Type: application/pdf
+
+< ./relatorio-teste.pdf
+--limite--
+
+### Baixar relatório
+GET {{api}}/relatorios/1/download
