@@ -1,0 +1,100 @@
+// Modelo de dados do Observatório do Turismo de SRS (Milestone III).
+// Tabelas: usuario, indicador, estabelecimento, registro_indicador e relatorio.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Papel {
+  ADMIN
+  EDITOR
+}
+
+// Como somar os valores mensais de um indicador ao olhar um período maior:
+// SOMA   -> fluxos (ex.: visitantes no período = soma dos meses)
+// ULTIMO -> estoques (ex.: leitos existentes = valor do mês mais recente)
+// MEDIA  -> taxas (ex.: ocupação média = média dos meses)
+enum Agregacao {
+  SOMA
+  ULTIMO
+  MEDIA
+}
+
+model Usuario {
+  id         Int                 @id @default(autoincrement())
+  nome       String              @db.VarChar(120)
+  email      String              @unique @db.VarChar(160)
+  senhaHash  String              @map("senha_hash") @db.VarChar(255)
+  papel      Papel               @default(ADMIN)
+  criadoEm   DateTime            @default(now()) @map("criado_em")
+  registros  RegistroIndicador[]
+  relatorios Relatorio[]
+
+  @@map("usuario")
+}
+
+model Indicador {
+  id        Int                 @id @default(autoincrement())
+  nome      String              @db.VarChar(120)
+  categoria String              @db.VarChar(60) // setor: Hospedagem, Leitos, Empresas, Empregos, Visitantes...
+  unidade   String              @db.VarChar(30)
+  descricao String?             @db.VarChar(255)
+  agregacao Agregacao           @default(SOMA)
+  ativo     Boolean             @default(true)
+  registros RegistroIndicador[]
+
+  @@unique([nome, categoria])
+  @@index([categoria])
+  @@map("indicador")
+}
+
+model Estabelecimento {
+  id        Int                 @id @default(autoincrement())
+  nome      String              @db.VarChar(160)
+  categoria String              @db.VarChar(60) // hotel, pousada, restaurante...
+  endereco  String?             @db.VarChar(255)
+  regiao    String?             @db.VarChar(80)
+  registros RegistroIndicador[]
+
+  @@map("estabelecimento")
+}
+
+model RegistroIndicador {
+  id                Int              @id @default(autoincrement())
+  indicadorId       Int              @map("indicador_id")
+  // NULL = valor consolidado do município (não vem de um estabelecimento específico)
+  estabelecimentoId Int?             @map("estabelecimento_id")
+  usuarioId         Int              @map("usuario_id")
+  valor             Decimal          @db.Decimal(14, 2)
+  periodo           DateTime         @db.Date // sempre o 1º dia do mês de referência
+  criadoEm          DateTime         @default(now()) @map("criado_em")
+  atualizadoEm      DateTime         @updatedAt @map("atualizado_em")
+
+  indicador       Indicador        @relation(fields: [indicadorId], references: [id], onDelete: Cascade)
+  estabelecimento Estabelecimento? @relation(fields: [estabelecimentoId], references: [id], onDelete: SetNull)
+  usuario         Usuario          @relation(fields: [usuarioId], references: [id])
+
+  @@index([indicadorId, periodo])
+  @@index([estabelecimentoId])
+  @@map("registro_indicador")
+}
+
+model Relatorio {
+  id           Int      @id @default(autoincrement())
+  titulo       String   @db.VarChar(200)
+  descricao    String?  @db.Text
+  ano          Int?
+  arquivoNome  String   @map("arquivo_nome") @db.VarChar(255) // nome original do PDF
+  arquivoPath  String   @map("arquivo_path") @db.VarChar(255) // nome salvo em uploads/
+  tamanhoBytes Int      @map("tamanho_bytes")
+  publicadoEm  DateTime @default(now()) @map("publicado_em")
+  usuarioId    Int      @map("usuario_id")
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@map("relatorio")
+}
