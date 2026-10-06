@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { agregar, serieMensal, variacaoPercentual } from "../lib/agregacao.js";
 import { HttpError } from "../lib/http-error.js";
-import { chaveMes, mesesEntre, parseMes, periodoPadrao, somarMeses } from "../lib/periodo.js";
+import { chaveMes, parseMes, periodoPadrao, somarMeses } from "../lib/periodo.js";
 import { prisma } from "../lib/prisma.js";
 import { filtroDashboardSchema, serieSchema } from "../schemas/index.js";
 
@@ -17,20 +17,23 @@ function lerPeriodo(inicio?: string, fim?: string) {
 
 /**
  * GET /api/dashboard/resumo?inicio=2026-01&fim=2026-09&categoria=Hospedagem
- * Um card por indicador: valor no período + variação em relação ao período anterior
- * de mesmo tamanho (ex.: jan–set/2026 comparado com abr–dez/2025).
+ * Um card por indicador: valor no período + variação em relação ao MESMO período
+ * do ano anterior (o turismo é sazonal, então jan–set/2026 se compara com jan–set/2025).
+ *
+ * Cada card usa só os meses que têm lançamento: se o período pedido vai até outubro
+ * mas o último dado é de setembro, o card cobre jan–set e compara com jan–set do ano
+ * anterior. Sem isso, um mês ainda não lançado contaria como zero na soma.
+ * Os meses realmente usados voltam em card.periodo e card.periodoAnterior.
  */
 dashboardRoutes.get("/resumo", async (req, res) => {
   const f = filtroDashboardSchema.parse(req.query);
   const { inicio, fim } = lerPeriodo(f.inicio, f.fim);
-  const meses = mesesEntre(inicio, fim);
-  const inicioAnterior = somarMeses(inicio, -meses);
 
   const indicadores = await prisma.indicador.findMany({
     where: { ativo: true, categoria: f.categoria },
     include: {
       registros: {
-        where: { periodo: { gte: inicioAnterior, lte: fim } },
+        where: { periodo: { gte: somarMeses(inicio, -12), lte: fim } },
         select: { valor: true, periodo: true, estabelecimentoId: true },
       },
     },
@@ -38,15 +41,34 @@ dashboardRoutes.get("/resumo", async (req, res) => {
   });
 
   const cards = indicadores.map(({ registros, ...indicador }) => {
-    const atuais = registros.filter((r) => r.periodo >= inicio);
-    const anteriores = registros.filter((r) => r.periodo < inicio);
-    const valor = agregar(serieMensal(atuais, indicador.agregacao), indicador.agregacao);
-    const valorAnterior = agregar(serieMensal(anteriores, indicador.agregacao), indicador.agregacao);
+    const serieAtual = serieMensal(
+      registros.filter((r) => r.periodo >= inicio),
+      indicador.agregacao,
+    );
+    if (serieAtual.length === 0) {
+      return { indicador, valor: null, valorAnterior: null, variacao: null, periodo: null, periodoAnterior: null };
+    }
+
+    // Meses com dado dentro do período pedido (a série já vem ordenada)
+    const inicioEfetivo = parseMes(serieAtual[0].periodo);
+    const fimEfetivo = parseMes(serieAtual[serieAtual.length - 1].periodo);
+    const inicioAnterior = somarMeses(inicioEfetivo, -12);
+    const fimAnterior = somarMeses(fimEfetivo, -12);
+
+    const serieAnterior = serieMensal(
+      registros.filter((r) => r.periodo >= inicioAnterior && r.periodo <= fimAnterior),
+      indicador.agregacao,
+    );
+    const valor = agregar(serieAtual, indicador.agregacao);
+    const valorAnterior = agregar(serieAnterior, indicador.agregacao);
     return {
       indicador,
       valor,
       valorAnterior,
       variacao: variacaoPercentual(valor, valorAnterior),
+      periodo: { inicio: chaveMes(inicioEfetivo), fim: chaveMes(fimEfetivo) },
+      periodoAnterior:
+        serieAnterior.length > 0 ? { inicio: chaveMes(inicioAnterior), fim: chaveMes(fimAnterior) } : null,
     };
   });
 
@@ -56,8 +78,7 @@ dashboardRoutes.get("/resumo", async (req, res) => {
   });
 
   res.json({
-    periodo: { inicio: chaveMes(inicio), fim: chaveMes(fim) },
-    periodoAnterior: { inicio: chaveMes(inicioAnterior), fim: chaveMes(somarMeses(inicio, -1)) },
+    periodo: { inicio: chaveMes(inicio), fim: chaveMes(fim) }, // período pedido
     atualizadoEm: ultima?.atualizadoEm ?? null,
     cards,
   });

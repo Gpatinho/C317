@@ -18,14 +18,6 @@ export function somarMeses(data: Date, meses: number): Date {
   return new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth() + meses, 1));
 }
 
-export function mesesEntre(inicio: Date, fim: Date): number {
-  return (
-    (fim.getUTCFullYear() - inicio.getUTCFullYear()) * 12 +
-    (fim.getUTCMonth() - inicio.getUTCMonth()) +
-    1
-  );
-}
-
 /** Período padrão: de janeiro do ano corrente até o mês atual. */
 export function periodoPadrao(): { inicio: Date; fim: Date } {
   const hoje = new Date();

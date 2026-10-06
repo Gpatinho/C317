@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EstatisticasHome } from "./estatisticas-home";
 
 // Fotos do carrossel do hero.
 // Troque o "src" pelo caminho real assim que as imagens definitivas
@@ -77,20 +78,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 text-center border-t border-white/20 pt-4">
-            <div>
-              <p className="text-2xl font-bold text-amber-300">12+</p>
-              <p className="text-xs text-white/70">Indicadores</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-cyan-300">50+</p>
-              <p className="text-xs text-white/70">Relatórios</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold">5</p>
-              <p className="text-xs text-white/70">Dashboards</p>
-            </div>
-          </div>
+          <EstatisticasHome />
         </div>
       </section>
 

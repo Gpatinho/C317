@@ -69,7 +69,7 @@ backend/
 | POST/PUT/DELETE 🔒 | `/api/indicadores[/:id]` | Gerencia indicadores |
 | GET | `/api/registros?indicadorId=&categoria=&inicio=&fim=` | Valores lançados |
 | POST/PUT/DELETE 🔒 | `/api/registros[/:id]` | `{ indicadorId, valor, periodo: "2026-03", estabelecimentoId? }` |
-| GET | `/api/dashboard/resumo?inicio=&fim=&categoria=` | Cards: valor do período + variação % |
+| GET | `/api/dashboard/resumo?inicio=&fim=&categoria=` | Cards: valor do período + variação % vs mesmo período do ano anterior |
 | GET | `/api/dashboard/serie?indicadorId=&inicio=&fim=` | Série mensal para o gráfico |
 | GET | `/api/estabelecimentos` | Lista estabelecimentos |
 | POST/PUT/DELETE 🔒 | `/api/estabelecimentos[/:id]` | Gerencia estabelecimentos |
@@ -90,6 +90,7 @@ O modelo segue o Milestone III, com as cinco tabelas: `usuario`, `indicador`, `e
 - **Campo `agregacao` no indicador.** Nem todo indicador se soma: visitantes de jan a set é a soma dos meses (`SOMA`), mas leitos é o número do mês mais recente (`ULTIMO`) e ocupação é a média (`MEDIA`). O dashboard usa esse campo para calcular os cards corretamente.
 - **Um valor por indicador/mês/estabelecimento.** A API recusa duplicados (409) e pede para editar o existente.
 - **`periodo` é sempre o dia 1 do mês**, pois os dados do Observatório são mensais.
+- **A variação % do dashboard compara com o mesmo período do ano anterior** (jan–set/2026 vs jan–set/2025), porque o turismo é sazonal. Cada card considera só os meses que têm lançamento: se o período pedido vai até outubro e o último dado é de setembro, o card usa jan–set dos dois anos. Assim, um mês ainda não lançado não conta como zero. Os meses usados voltam em `card.periodo` e `card.periodoAnterior` (`null` quando não há dados para comparar).
 
 ## Deploy (Render/Railway)
 

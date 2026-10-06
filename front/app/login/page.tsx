@@ -1,11 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, type FormEvent } from "react";
+import { api } from "@/lib/api";
 
 export default function LoginAdmin() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [lembrarDeMim, setLembrarDeMim] = useState(true);
+  const [erro, setErro] = useState("");
+  const [enviando, setEnviando] = useState(false);
+
+  async function entrar(e: FormEvent) {
+    e.preventDefault();
+    setErro("");
+    setEnviando(true);
+    try {
+      await api.login(email, senha, lembrarDeMim);
+      // TODO: trocar para o painel administrativo quando a página existir
+      router.push("/dashboard");
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : "Não foi possível entrar.");
+      setEnviando(false);
+    }
+  }
 
   return (
     <main
@@ -27,7 +48,7 @@ export default function LoginAdmin() {
 
       {/* Card de login */}
       <form
-        onSubmit={(e) => e.preventDefault()}
+        onSubmit={entrar}
         className="relative z-10 bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 px-8 py-10"
       >
         <h1 className="text-center font-serif text-2xl font-bold text-gray-800 mb-1">
@@ -42,6 +63,10 @@ export default function LoginAdmin() {
         </label>
         <input
           type="email"
+          required
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           placeholder="seu@email.com"
           className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-700 mb-5 focus:outline-none focus:ring-2 focus:ring-violet-400"
         />
@@ -52,6 +77,10 @@ export default function LoginAdmin() {
         <div className="relative mb-4">
           <input
             type={mostrarSenha ? "text" : "password"}
+            required
+            autoComplete="current-password"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
             placeholder="••••••••"
             className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-400"
           />
@@ -80,11 +109,18 @@ export default function LoginAdmin() {
           </a>
         </div>
 
+        {erro && (
+          <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2 mb-4">
+            {erro}
+          </p>
+        )}
+
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-blue-700 to-fuchsia-600 hover:opacity-90 transition text-white font-semibold rounded-full py-3"
+          disabled={enviando}
+          className="w-full bg-gradient-to-r from-blue-700 to-fuchsia-600 hover:opacity-90 transition text-white font-semibold rounded-full py-3 disabled:opacity-60 disabled:cursor-wait"
         >
-          Entrar
+          {enviando ? "Entrando..." : "Entrar"}
         </button>
 
         <p className="text-center text-xs text-gray-400 mt-4">
