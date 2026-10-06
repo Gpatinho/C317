@@ -11,11 +11,15 @@ export type Indicador = {
   agregacao: "SOMA" | "ULTIMO" | "MEDIA";
 };
 
+type Intervalo = { inicio: string; fim: string }; // meses "2026-01"
+
 export type CardResumo = {
   indicador: Indicador;
   valor: number | null;
   valorAnterior: number | null;
   variacao: number | null; // em %, ex.: 12.4
+  periodo: Intervalo | null; // meses com dado usados no valor (null = sem dados)
+  periodoAnterior: Intervalo | null; // mesmos meses do ano anterior (null = sem comparação)
 };
 
 export type Relatorio = {
@@ -28,8 +32,17 @@ export type Relatorio = {
   publicadoEm: string;
 };
 
+export type Resumo = {
+  periodo: Intervalo; // período pedido
+  atualizadoEm: string | null;
+  cards: CardResumo[];
+};
+
+// "Lembrar de mim" marcado -> localStorage (sobrevive ao fechar o navegador);
+// desmarcado -> sessionStorage (some ao fechar a aba).
 function token() {
-  return typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("token") ?? sessionStorage.getItem("token");
 }
 
 async function request<T>(caminho: string, opcoes: RequestInit = {}): Promise<T> {
@@ -40,7 +53,12 @@ async function request<T>(caminho: string, opcoes: RequestInit = {}): Promise<T>
     headers.set("Content-Type", "application/json");
   }
 
-  const resposta = await fetch(`${API_URL}${caminho}`, { ...opcoes, headers });
+  let resposta: Response;
+  try {
+    resposta = await fetch(`${API_URL}${caminho}`, { ...opcoes, headers });
+  } catch {
+    throw new Error("Não foi possível conectar ao servidor. Tente novamente em instantes.");
+  }
   if (resposta.status === 204) return undefined as T;
 
   const dados = await resposta.json();
@@ -54,22 +72,26 @@ const qs = (params: Record<string, string | number | undefined>) => {
 };
 
 export const api = {
-  login: async (email: string, senha: string) => {
+  login: async (email: string, senha: string, lembrar = true) => {
     const r = await request<{ token: string; usuario: { nome: string } }>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, senha }),
     });
-    localStorage.setItem("token", r.token);
+    api.logout();
+    (lembrar ? localStorage : sessionStorage).setItem("token", r.token);
     return r;
   },
-  logout: () => localStorage.removeItem("token"),
+  logout: () => {
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
+  },
 
   categorias: () => request<string[]>("/indicadores/categorias"),
   indicadores: (categoria?: string) => request<Indicador[]>(`/indicadores${qs({ categoria })}`),
 
   // inicio/fim no formato "2026-01"
   resumo: (f: { inicio?: string; fim?: string; categoria?: string }) =>
-    request<{ cards: CardResumo[]; atualizadoEm: string | null }>(`/dashboard/resumo${qs(f)}`),
+    request<Resumo>(`/dashboard/resumo${qs(f)}`),
   serie: (indicadorId: number, inicio?: string, fim?: string) =>
     request<{ indicador: Indicador; serie: { periodo: string; valor: number | null }[] }>(
       `/dashboard/serie${qs({ indicadorId, inicio, fim })}`,

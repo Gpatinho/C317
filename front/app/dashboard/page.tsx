@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -11,8 +11,11 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
+import { api, type CardResumo, type Indicador, type Resumo } from "@/lib/api";
 
 // Categorias de filtro.
+// PENDENTE: estas categorias (tipos de atração) não existem no back-end, que hoje
+// agrupa os indicadores por setor (Visitantes, Hospedagem...). Ainda não filtram nada.
 const categorias = [
   "Visão geral",
   "Restaurantes",
@@ -23,49 +26,57 @@ const categorias = [
   "Pontos conhecidos",
 ];
 
-// Indicadores-chave exibidos nos cards.
-// Dados fictícios (mock) — substituir pela integração com a API/back-end.
-const indicadores = [
-  {
-    titulo: "Visitantes/mês",
-    valor: "18.420",
-    variacao: "+12,4%",
-    legenda: "estimativa média nos últimos 30 dias",
-    icone: "👥",
-  },
-  {
-    titulo: "Estabelecimentos",
-    valor: "286",
-    variacao: "+4,8%",
-    legenda: "empreendimentos turísticos ativos",
-    icone: "🏨",
-  },
-  {
-    titulo: "Ocupação média",
-    valor: "67,8%",
-    variacao: "+6,2%",
-    legenda: "rede hoteleira no período selecionado",
-    icone: "🛏",
-  },
-];
+const icones: Record<string, string> = {
+  Visitantes: "👥",
+  Hospedagem: "🏨",
+  Leitos: "🛏",
+  Empresas: "🏢",
+  Empregos: "💼",
+};
 
-// Série mensal de visitantes (mock) para o gráfico.
-const fluxoMensal = [
-  { mes: "Jan", visitantes: 10500 },
-  { mes: "Fev", visitantes: 13500 },
-  { mes: "Mar", visitantes: 15200 },
-  { mes: "Abr", visitantes: 14200 },
-  { mes: "Mai", visitantes: 17300 },
-  { mes: "Jun", visitantes: 19800 },
-  { mes: "Jul", visitantes: 25800 },
-  { mes: "Ago", visitantes: 21200 },
-  { mes: "Set", visitantes: 29600 },
-  { mes: "Out", visitantes: 20700 },
-  { mes: "Nov", visitantes: 17200 },
-  { mes: "Dez", visitantes: 24900 },
-];
+// O que o número do card representa, conforme a agregação do indicador.
+function legenda(c: CardResumo) {
+  if (!c.periodo) return "sem dados no período selecionado";
+  const meses = intervalo(c.periodo);
+  const textos: Record<Indicador["agregacao"], string> = {
+    SOMA: `total de ${meses}`,
+    MEDIA: `média de ${meses}`,
+    ULTIMO: `valor de ${nomeMes(c.periodo.fim)}`,
+  };
+  return textos[c.indicador.agregacao];
+}
+
+const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+const numero = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+
+function formatarValor(valor: number | null, unidade: string) {
+  if (valor === null) return "—";
+  return unidade === "%" ? `${numero(valor)}%` : numero(valor);
+}
+
+// "2026-03" -> "Mar/2026"
+function nomeMes(periodo: string) {
+  const [ano, mes] = periodo.split("-");
+  return `${MESES[Number(mes) - 1]}/${ano}`;
+}
+
+// { inicio: "2026-01", fim: "2026-09" } -> "Jan–Set/2026"
+function intervalo({ inicio, fim }: { inicio: string; fim: string }) {
+  if (inicio === fim) return nomeMes(fim);
+  if (inicio.slice(0, 4) !== fim.slice(0, 4)) return `${nomeMes(inicio)}–${nomeMes(fim)}`;
+  return `${MESES[Number(inicio.slice(5)) - 1]}–${nomeMes(fim)}`;
+}
+
+function hojeISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+type Serie = { periodo: string; valor: number | null }[];
 
 // Eventos futuros exibidos no carrossel (mock).
+// PENDENTE: o back-end ainda não tem eventos.
 const eventosFuturos = [
   {
     icone: "🎵",
@@ -104,6 +115,59 @@ const eventosFuturos = [
 export default function Dashboard() {
   const [categoriaSelecionada, setCategoriaSelecionada] =
     useState("Visão geral");
+  const [inicio, setInicio] = useState(() => `${new Date().getFullYear()}-01-01`);
+  const [fim, setFim] = useState(hojeISO);
+
+  // A API trabalha com meses ("2026-03"); os inputs de data dão o dia também.
+  const filtro = { inicio: inicio.slice(0, 7), fim: fim.slice(0, 7) };
+  const chave = `${filtro.inicio}|${filtro.fim}`;
+
+  const [dados, setDados] = useState<{
+    chave: string;
+    resumo?: Resumo;
+    visitantes?: CardResumo;
+    serie?: Serie;
+    erro?: string;
+  }>();
+  const carregando = dados?.chave !== chave;
+
+  useEffect(() => {
+    if (!filtro.inicio || !filtro.fim) return;
+    let cancelado = false;
+
+    (async () => {
+      try {
+        const resumo = await api.resumo(filtro);
+        const visitantes = resumo.cards.find((c) => c.indicador.categoria === "Visitantes");
+        const serie = visitantes
+          ? (await api.serie(visitantes.indicador.id, filtro.inicio, filtro.fim)).serie
+          : undefined;
+        if (!cancelado) setDados({ chave, resumo, visitantes, serie });
+      } catch (err) {
+        if (!cancelado) {
+          setDados({ chave, erro: err instanceof Error ? err.message : "Erro ao carregar os dados." });
+        }
+      }
+    })();
+
+    return () => {
+      cancelado = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `chave` resume o filtro
+  }, [chave]);
+
+  const resumo = dados?.resumo;
+  const serie = dados?.serie ?? [];
+  const variosAnos = filtro.inicio.slice(0, 4) !== filtro.fim.slice(0, 4);
+  const dadosGrafico = serie.map((p) => ({
+    mes: variosAnos ? nomeMes(p.periodo) : MESES[Number(p.periodo.slice(5)) - 1],
+    visitantes: p.valor,
+  }));
+  const comValor = serie.filter((p): p is { periodo: string; valor: number } => p.valor !== null);
+  const pico = comValor.reduce<(typeof comValor)[number] | undefined>(
+    (maior, p) => (!maior || p.valor > maior.valor ? p : maior),
+    undefined,
+  );
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -150,10 +214,17 @@ export default function Dashboard() {
                 Refine a leitura por período e categoria
               </p>
             </div>
-            <span className="hidden md:flex items-center gap-1.5 text-xs text-emerald-600">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              Atualizado em 30 set. 2026
-            </span>
+            {resumo?.atualizadoEm && (
+              <span className="hidden md:flex items-center gap-1.5 text-xs text-emerald-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Atualizado em{" "}
+                {new Date(resumo.atualizadoEm).toLocaleDateString("pt-BR", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </span>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6">
@@ -164,13 +235,19 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 <input
                   type="date"
-                  defaultValue="2026-01-01"
+                  aria-label="Data inicial"
+                  value={inicio}
+                  max={fim}
+                  onChange={(e) => setInicio(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700"
                 />
                 <span className="text-gray-400 text-sm">até</span>
                 <input
                   type="date"
-                  defaultValue="2026-09-30"
+                  aria-label="Data final"
+                  value={fim}
+                  min={inicio}
+                  onChange={(e) => setFim(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700"
                 />
               </div>
@@ -200,30 +277,77 @@ export default function Dashboard() {
         </div>
       </section>
 
+      {dados?.erro && (
+        <section className="max-w-6xl mx-auto px-6 mt-6">
+          <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            {dados.erro}
+          </p>
+        </section>
+      )}
+
       {/* Cards de indicadores */}
-      <section className="max-w-6xl mx-auto px-6 mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {indicadores.map((item) => (
-          <div
-            key={item.titulo}
-            className="bg-white rounded-2xl shadow-sm p-5"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center text-sm">
-                  {item.icone}
-                </span>
-                <span className="text-sm text-gray-600">{item.titulo}</span>
+      <section
+        aria-busy={carregando}
+        className={`max-w-6xl mx-auto px-6 mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 transition-opacity ${
+          carregando ? "opacity-50" : ""
+        }`}
+      >
+        {!resumo &&
+          carregando &&
+          [0, 1, 2].map((i) => <div key={i} className="bg-white rounded-2xl shadow-sm p-5 h-36 animate-pulse" />)}
+
+        {resumo?.cards.map((card) => {
+          const { indicador, valor, variacao, periodoAnterior } = card;
+          // ULTIMO compara só o último mês (Set/2026 vs Set/2025); os demais, o intervalo todo
+          const comparadoA =
+            periodoAnterior &&
+            (indicador.agregacao === "ULTIMO" ? nomeMes(periodoAnterior.fim) : intervalo(periodoAnterior));
+          return (
+            <div
+              key={indicador.id}
+              title={indicador.descricao ?? undefined}
+              className="bg-white rounded-2xl shadow-sm p-5"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center text-sm">
+                    {icones[indicador.categoria] ?? "📊"}
+                  </span>
+                  <span className="text-sm text-gray-600">{indicador.nome}</span>
+                </div>
+                {variacao === null || !periodoAnterior ? (
+                  <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">
+                    sem comparação
+                  </span>
+                ) : (
+                  <span
+                    title={`Comparado a ${comparadoA}`}
+                    className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                      variacao >= 0 ? "text-emerald-600 bg-emerald-50" : "text-red-600 bg-red-50"
+                    }`}
+                  >
+                    {variacao >= 0 ? "↗ +" : "↘ "}
+                    {numero(variacao)}%
+                  </span>
+                )}
               </div>
-              <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                ↗ {item.variacao}
-              </span>
+              <p className="text-3xl font-bold text-gray-800 mb-1">
+                {formatarValor(valor, indicador.unidade)}
+              </p>
+              <p className="text-xs text-gray-400">
+                {indicador.unidade !== "%" && `${indicador.unidade} · `}
+                {legenda(card)}
+              </p>
+              {comparadoA && <p className="text-xs text-gray-400 mt-0.5">vs {comparadoA}</p>}
             </div>
-            <p className="text-3xl font-bold text-gray-800 mb-1">
-              {item.valor}
-            </p>
-            <p className="text-xs text-gray-400">{item.legenda}</p>
-          </div>
-        ))}
+          );
+        })}
+
+        {resumo && resumo.cards.length === 0 && (
+          <p className="md:col-span-3 text-sm text-gray-500 bg-white rounded-2xl shadow-sm p-5">
+            Nenhum indicador cadastrado ainda.
+          </p>
+        )}
       </section>
 
       {/* Gráfico de evolução */}
@@ -235,7 +359,7 @@ export default function Dashboard() {
                 Evolução mensal de visitantes
               </h2>
               <p className="text-xs text-gray-500">
-                Estimativa de fluxo turístico ao longo de 2026
+                Estimativa de fluxo turístico de {nomeMes(filtro.inicio)} a {nomeMes(filtro.fim)}
               </p>
             </div>
             <span className="hidden md:flex items-center gap-1.5 text-xs text-gray-500">
@@ -244,44 +368,52 @@ export default function Dashboard() {
             </span>
           </div>
 
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={fluxoMensal}>
-                <CartesianGrid stroke="#f0f0f0" vertical={false} />
-                <XAxis
-                  dataKey="mes"
-                  tick={{ fontSize: 12, fill: "#9ca3af" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tickFormatter={(v) => `${v / 1000} mil`}
-                  tick={{ fontSize: 12, fill: "#9ca3af" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  formatter={(value: number) => [
-                    `${value.toLocaleString("pt-BR")} visitantes`,
-                    "",
-                  ]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="visitantes"
-                  stroke="#6C5CE0"
-                  strokeWidth={2.5}
-                  dot={{ r: 4, fill: "#6C5CE0" }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className={`h-72 transition-opacity ${carregando ? "opacity-50" : ""}`}>
+            {!carregando && comValor.length === 0 ? (
+              <p className="h-full flex items-center justify-center text-sm text-gray-400">
+                Sem dados de visitantes para o período selecionado.
+              </p>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dadosGrafico}>
+                  <CartesianGrid stroke="#f0f0f0" vertical={false} />
+                  <XAxis
+                    dataKey="mes"
+                    tick={{ fontSize: 12, fill: "#9ca3af" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tickFormatter={(v) => `${v / 1000} mil`}
+                    tick={{ fontSize: 12, fill: "#9ca3af" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    formatter={(value) => [
+                      typeof value === "number" ? `${numero(value)} visitantes` : "sem dado",
+                      "",
+                    ]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="visitantes"
+                    stroke="#6C5CE0"
+                    strokeWidth={2.5}
+                    dot={{ r: 4, fill: "#6C5CE0" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
-          <p className="text-xs text-gray-500 mt-4 flex items-center gap-1.5">
-            <span className="text-emerald-500">↗</span>
-            O fluxo cresceu 18,5% no ano, com picos associados às férias de
-            julho e à feira de inovação em setembro.
-          </p>
+          {dados?.visitantes?.valor != null && pico && (
+            <p className="text-xs text-gray-500 mt-4 flex items-center gap-1.5">
+              <span className="text-violet-500">●</span>
+              {numero(dados.visitantes.valor)} visitantes no período, com pico em{" "}
+              {nomeMes(pico.periodo)} ({numero(pico.valor)}).
+            </p>
+          )}
         </div>
       </section>
 
