@@ -98,3 +98,20 @@ model Relatorio {
 
   @@map("relatorio")
 }
+
+
+// Agenda de eventos
+model Evento {
+  id         Int       @id @default(autoincrement())
+  nome       String    @db.VarChar(160)
+  dataInicio DateTime  @map("data_inicio") @db.Date
+  dataFim    DateTime? @map("data_fim") @db.Date // NULL = evento de um dia só
+  local      String    @db.VarChar(160)
+  contato    String?   @db.VarChar(120) // site, @instagram, telefone...
+  gratuito   Boolean   @default(true)
+  icone      String?   @db.VarChar(8) // emoji exibido no card
+  descricao  String?   @db.Text
+
+  @@index([dataInicio])
+  @@map("evento")
+}
