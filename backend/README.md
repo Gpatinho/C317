@@ -19,7 +19,8 @@ cp .env.example .env          # no Windows: copy .env.example .env
 #    CREATE DATABASE observatorio;
 
 # 3. Cria as tabelas e gera o Prisma Client
-npx prisma migrate dev --name init
+npx prisma migrate dev
+npm run db:generate
 
 # 4. Popula com o admin e dados FICTÍCIOS de exemplo
 npm run db:seed
