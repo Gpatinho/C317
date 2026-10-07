@@ -79,3 +79,12 @@ export const usuarioSchema = z.object({
   senha: z.string().min(6, "A senha precisa ter pelo menos 6 caracteres"),
   papel: z.enum(["ADMIN", "EDITOR"]).default("EDITOR"),
 });
+
+export const atrativoSchema = z.object({
+  nome: z.string().trim().min(2).max(160),
+  tipo: z.enum(["ATRATIVO", "EQUIPAMENTO", "SERVICO"]),
+  categoria: z.string().trim().min(2).max(60),
+  descricao: z.string().trim().max(5000).nullish(),
+  endereco: z.string().trim().max(255).nullish(),
+  contato: z.string().trim().max(120).nullish(),
+});

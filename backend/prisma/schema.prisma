@@ -115,3 +115,24 @@ model Evento {
   @@index([dataInicio])
   @@map("evento")
 }
+
+// Inventário Turístico  
+enum TipoAtrativo {
+  ATRATIVO // Oque motivou a a visita (igreja, cachoeira, festa, etc)
+  EQUIPAMENTO // estrutura que atende o turista (hotel, restaurante, etc)
+  SERVICO // Apoio (guia, agência, transporte, etc)
+}
+
+model Atrativo {
+  id         Int          @id @default(autoincrement())
+  nome       String       @db.VarChar(160)
+  tipo       TipoAtrativo
+  categoria  String       @db.VarChar(60) // Restaurante, Pico, Igreja, Hotel...
+  descricao  String?      @db.Text
+  endereco   String?      @db.VarChar(255)
+  contato    String?      @db.VarChar(120)
+  revisadoEm DateTime     @default(now()) @map("revisado_em") // última vez que alguém conferiu os dados
+
+  @@index([tipo, categoria])
+  @@map("atrativo")
+}

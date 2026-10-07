@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import { env } from "./lib/env.js";
 import { errorHandler } from "./middlewares/error-handler.js";
+import { atrativosRoutes } from "./routes/atrativos.routes.js";
 import { authRoutes } from "./routes/auth.routes.js";
 import { dashboardRoutes } from "./routes/dashboard.routes.js";
 import { estabelecimentosRoutes } from "./routes/estabelecimentos.routes.js";
@@ -26,6 +27,6 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/relatorios", relatoriosRoutes);
 app.use("/api/eventos", eventosRoutes);
 app.use("/api/usuarios", usuariosRoutes);
-
+app.use("/api/atrativos", atrativosRoutes);
 app.use((_req, res) => res.status(404).json({ erro: "Rota não encontrada." }));
 app.use(errorHandler);
