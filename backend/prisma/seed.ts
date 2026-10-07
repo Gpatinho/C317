@@ -115,7 +115,22 @@ async function main() {
           local: "Igreja Matriz", contato: "@paroquiasrs", gratuito: true, icone: "✨" },
       ],
     });
-    console.log("✔ Eventos de exemplo");
+     console.log("✔ Eventos de exemplo");
+  }
+
+  if ((await prisma.atrativo.count()) === 0) {
+    await prisma.atrativo.createMany({
+      data: [
+        { nome: "Igreja Matriz de Santa Rita", tipo: "ATRATIVO", categoria: "Igreja", endereco: "Praça Santa Rita, Centro" },
+        { nome: "Rampa do Zeza", tipo: "ATRATIVO", categoria: "Pico", descricao: "Rampa de voo livre com vista da cidade" },
+        { nome: "Restaurante Exemplo (fictício)", tipo: "EQUIPAMENTO", categoria: "Restaurante" },
+        { nome: "Hotel Exemplo Centro (fictício)", tipo: "EQUIPAMENTO", categoria: "Hotel" },
+        { nome: "Centro de Informações Turísticas (fictício)", tipo: "SERVICO", categoria: "Informação turística",
+          // conferido há mais de 1 ano: aparece em /revisao-pendente
+          revisadoEm: new Date("2025-01-15") },
+      ],
+    });
+    console.log("✔ Inventário turístico de exemplo");
   }
 }
 
