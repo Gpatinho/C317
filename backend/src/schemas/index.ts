@@ -60,3 +60,22 @@ export const relatorioSchema = z.object({
   descricao: z.string().trim().max(5000).optional(),
   ano: z.coerce.number().int().min(2000).max(2100).optional(),
 });
+
+
+export const eventoSchema = z.object({
+  nome: z.string().trim().min(3).max(160),
+  dataInicio: z.iso.date("Use o formato AAAA-MM-DD"),
+  dataFim: z.iso.date("Use o formato AAAA-MM-DD").nullish(),
+  local: z.string().trim().min(2).max(160),
+  contato: z.string().trim().max(120).nullish(),
+  gratuito: z.boolean().default(true),
+  icone: z.string().trim().max(8).nullish(),
+  descricao: z.string().trim().max(5000).nullish(),
+});
+
+export const usuarioSchema = z.object({
+  nome: z.string().trim().min(2).max(120),
+  email: z.email("E-mail inválido"),
+  senha: z.string().min(6, "A senha precisa ter pelo menos 6 caracteres"),
+  papel: z.enum(["ADMIN", "EDITOR"]).default("EDITOR"),
+});

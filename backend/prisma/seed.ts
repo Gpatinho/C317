@@ -100,6 +100,23 @@ async function main() {
     });
     console.log("✔ Estabelecimentos de exemplo");
   }
+
+  if ((await prisma.evento.count()) === 0) {
+    const d = (iso: string) => new Date(iso);
+    await prisma.evento.createMany({
+      data: [
+        { nome: "Festival de Inverno de Santa Rita", dataInicio: d("2027-07-12"), dataFim: d("2027-07-14"),
+          local: "Praça Central", contato: "@festivaldeinvernosrs", gratuito: true, icone: "🎵" },
+        { nome: "Feira de Eletrônica e Inovação", dataInicio: d("2027-08-22"),
+          local: "Inatel - Campus SRS", contato: "@inatel.oficial", gratuito: true, icone: "⚙" },
+        { nome: "Encontro de Voo Livre na Serra", dataInicio: d("2027-09-05"),
+          local: "Rampa do Zeza", contato: "voolivresrs", gratuito: false, icone: "🪂" },
+        { nome: "Festa do Padroeiro", dataInicio: d("2027-10-03"), dataFim: d("2027-10-06"),
+          local: "Igreja Matriz", contato: "@paroquiasrs", gratuito: true, icone: "✨" },
+      ],
+    });
+    console.log("✔ Eventos de exemplo");
+  }
 }
 
 main()
