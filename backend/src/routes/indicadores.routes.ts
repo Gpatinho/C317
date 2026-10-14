@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
-import { autenticar } from "../middlewares/auth.js";
-import { idParam, indicadorSchema } from "../schemas/index.js";
+import { autenticar, exigirPapel } from "../middlewares/auth.js";
+import { idParam, indicadorSchema, indicadorUpdateSchema } from "../schemas/index.js";
 import { HttpError } from "../lib/http-error.js";
 
 export const indicadoresRoutes = Router();
@@ -45,13 +45,13 @@ indicadoresRoutes.post("/", autenticar, async (req, res) => {
 
 indicadoresRoutes.put("/:id", autenticar, async (req, res) => {
   const { id } = idParam.parse(req.params);
-  const dados = indicadorSchema.partial().parse(req.body);
+  const dados = indicadorUpdateSchema.parse(req.body);
   const indicador = await prisma.indicador.update({ where: { id }, data: dados });
   res.json(indicador);
 });
 
 // Apaga o indicador e TODOS os registros dele. Para só esconder, use PUT { ativo: false }.
-indicadoresRoutes.delete("/:id", autenticar, async (req, res) => {
+indicadoresRoutes.delete("/:id", autenticar, exigirPapel("ADMIN"), async (req, res) => {
   const { id } = idParam.parse(req.params);
   await prisma.indicador.delete({ where: { id } });
   res.status(204).end();

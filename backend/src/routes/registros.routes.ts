@@ -3,7 +3,7 @@ import type { Prisma } from "../generated/prisma/client.js";
 import { HttpError } from "../lib/http-error.js";
 import { parseMes } from "../lib/periodo.js";
 import { prisma } from "../lib/prisma.js";
-import { autenticar } from "../middlewares/auth.js";
+import { autenticar, exigirPapel } from "../middlewares/auth.js";
 import { filtroRegistrosSchema, idParam, registroSchema } from "../schemas/index.js";
 
 export const registrosRoutes = Router();
@@ -96,7 +96,7 @@ registrosRoutes.put("/:id", autenticar, async (req, res) => {
   res.json(formatar(registro));
 });
 
-registrosRoutes.delete("/:id", autenticar, async (req, res) => {
+registrosRoutes.delete("/:id", autenticar, exigirPapel("ADMIN"), async (req, res) => {
   const { id } = idParam.parse(req.params);
   await prisma.registroIndicador.delete({ where: { id } });
   res.status(204).end();
