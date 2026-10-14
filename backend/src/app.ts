@@ -16,6 +16,10 @@ import { usuariosRoutes } from "./routes/usuarios.routes.js";
 
 export const app = express();
 
+// A API roda atrás de um proxy (Codespaces, Render): confia no 1º proxy para
+// descobrir o IP real de quem fez a requisição (usado no limite de tentativas).
+app.set("trust proxy", 1);
+
 app.use(cors({ origin: env.FRONTEND_URL.split(",") }));
 app.use(express.json());
 

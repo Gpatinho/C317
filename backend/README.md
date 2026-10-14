@@ -124,6 +124,13 @@ O modelo parte do Milestone III (usuario, indicador, estabelecimento, registro_i
 
 Códigos de teste criados pelo seed: CENT-2026 (hotel) e SERR-2026 (pousada).
 
+## Segurança
+
+- *Senhas* guardadas só como hash (bcrypt). *Códigos de acesso da coleta* guardados só como hash (SHA-256).
+- *O token é conferido no banco a cada requisição.* Se um usuário for removido ou mudar de papel, o token antigo perde o acesso na hora, sem esperar as 8 horas de validade.
+- *Limite de tentativas* (express-rate-limit): 10 erros de login ou 20 erros na coleta a cada 15 minutos, por IP. Os acertos não contam. A API confia no 1º proxy (trust proxy) para descobrir o IP real no Codespaces e no Render.
+- *Todo DELETE é só ADMIN*, e a gestão de usuários também.
+
 ## Deploy (Render/Railway)
 
 - Configure as mesmas variáveis do .env no painel do serviço.
