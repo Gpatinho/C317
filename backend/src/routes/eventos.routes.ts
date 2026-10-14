@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { HttpError } from "../lib/http-error.js";
 import { prisma } from "../lib/prisma.js";
-import { autenticar } from "../middlewares/auth.js";
-import { eventoSchema, idParam } from "../schemas/index.js";
+import { autenticar, exigirPapel } from "../middlewares/auth.js";
+import { eventoSchema, eventoUpdateSchema, idParam } from "../schemas/index.js";
 
 export const eventosRoutes = Router();
 
@@ -17,7 +17,7 @@ function validarDatas(inicio: Date, fim: Date | null | undefined) {
 // futuros=true -> só eventos que ainda não terminaram, do mais próximo ao mais distante
 eventosRoutes.get("/", async (req, res) => {
   const futuros = req.query.futuros === "true";
-  const limite = Number(req.query.limite) || undefined;
+  const limite = Number(req.query.limite) > 0 ? Number(req.query.limite) : undefined;
   const hoje = new Date(new Date().toISOString().slice(0, 10)); // hoje, 00:00 UTC
 
   const eventos = await prisma.evento.findMany({
@@ -50,13 +50,13 @@ eventosRoutes.put("/:id", autenticar, async (req, res) => {
   const atual = await prisma.evento.findUnique({ where: { id } });
   if (!atual) throw new HttpError(404, "Evento não encontrado.");
 
-  const d = eventoSchema.partial().parse(req.body);
+  const d = eventoUpdateSchema.parse(req.body);
   const dados = { ...d, dataInicio: data(d.dataInicio) ?? undefined, dataFim: data(d.dataFim) };
   validarDatas(dados.dataInicio ?? atual.dataInicio, dados.dataFim === undefined ? atual.dataFim : dados.dataFim);
   res.json(await prisma.evento.update({ where: { id }, data: dados }));
 });
 
-eventosRoutes.delete("/:id", autenticar, async (req, res) => {
+eventosRoutes.delete("/:id", autenticar, exigirPapel("ADMIN"), async (req, res) => {
   const { id } = idParam.parse(req.params);
   await prisma.evento.delete({ where: { id } });
   res.status(204).end();

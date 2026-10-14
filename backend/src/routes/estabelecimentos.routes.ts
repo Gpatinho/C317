@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { HttpError } from "../lib/http-error.js";
 import { prisma } from "../lib/prisma.js";
-import { autenticar } from "../middlewares/auth.js";
+import { autenticar, exigirPapel } from "../middlewares/auth.js";
 import { estabelecimentoSchema, idParam } from "../schemas/index.js";
 
 export const estabelecimentosRoutes = Router();
@@ -34,7 +34,7 @@ estabelecimentosRoutes.put("/:id", autenticar, async (req, res) => {
   res.json(await prisma.estabelecimento.update({ where: { id }, data: dados }));
 });
 
-estabelecimentosRoutes.delete("/:id", autenticar, async (req, res) => {
+estabelecimentosRoutes.delete("/:id", autenticar, exigirPapel("ADMIN"), async (req, res) => {
   const { id } = idParam.parse(req.params);
   await prisma.estabelecimento.delete({ where: { id } });
   res.status(204).end();

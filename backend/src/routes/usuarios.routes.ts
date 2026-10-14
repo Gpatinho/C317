@@ -3,7 +3,7 @@ import { Router } from "express";
 import { HttpError } from "../lib/http-error.js";
 import { prisma } from "../lib/prisma.js";
 import { autenticar, exigirPapel } from "../middlewares/auth.js";
-import { idParam, usuarioSchema } from "../schemas/index.js";
+import { idParam, usuarioSchema, usuarioUpdateSchema } from "../schemas/index.js";
 
 export const usuariosRoutes = Router();
 
@@ -31,7 +31,7 @@ usuariosRoutes.post("/", async (req, res) => {
 // PUT /api/usuarios/:id  (envie só o que mudar; "senha" troca a senha)
 usuariosRoutes.put("/:id", async (req, res) => {
   const { id } = idParam.parse(req.params);
-  const { senha, ...dados } = usuarioSchema.partial().parse(req.body);
+  const { senha, ...dados } = usuarioUpdateSchema.parse(req.body);
   if (id === req.usuario!.id && dados.papel && dados.papel !== req.usuario!.papel) {
     throw new HttpError(400, "Você não pode alterar o seu próprio papel.");
   }

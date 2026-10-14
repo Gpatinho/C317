@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { HttpError } from "../lib/http-error.js";
 import { prisma } from "../lib/prisma.js";
-import { autenticar } from "../middlewares/auth.js";
+import { autenticar, exigirPapel } from "../middlewares/auth.js";
 import { atrativoSchema, idParam } from "../schemas/index.js";
 
 export const atrativosRoutes = Router();
@@ -67,7 +67,7 @@ atrativosRoutes.post("/:id/revisar", autenticar, async (req, res) => {
   res.json(await prisma.atrativo.update({ where: { id }, data: { revisadoEm: new Date() } }));
 });
 
-atrativosRoutes.delete("/:id", autenticar, async (req, res) => {
+atrativosRoutes.delete("/:id", autenticar, exigirPapel("ADMIN"), async (req, res) => {
   const { id } = idParam.parse(req.params);
   await prisma.atrativo.delete({ where: { id } });
   res.status(204).end();

@@ -5,7 +5,7 @@ import { Router } from "express";
 import multer from "multer";
 import { HttpError } from "../lib/http-error.js";
 import { prisma } from "../lib/prisma.js";
-import { autenticar } from "../middlewares/auth.js";
+import { autenticar, exigirPapel } from "../middlewares/auth.js";
 import { idParam, relatorioSchema } from "../schemas/index.js";
 
 export const relatoriosRoutes = Router();
@@ -107,7 +107,7 @@ relatoriosRoutes.put("/:id", autenticar, async (req, res) => {
   res.json(await prisma.relatorio.update({ where: { id }, data: dados, select: camposPublicos }));
 });
 
-relatoriosRoutes.delete("/:id", autenticar, async (req, res) => {
+relatoriosRoutes.delete("/:id", autenticar, exigirPapel("ADMIN"), async (req, res) => {
   const { id } = idParam.parse(req.params);
   const relatorio = await prisma.relatorio.delete({ where: { id } });
   await fs.rm(path.join(PASTA_UPLOADS, relatorio.arquivoPath), { force: true });
