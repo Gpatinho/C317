@@ -70,6 +70,12 @@ export default function Home() {
                 Ver dashboard
               </Link>
               <Link
+                href="/relatorios"
+                className="bg-white/15 hover:bg-white/25 transition text-white font-medium text-sm rounded-full px-5 py-2 border border-white/30"
+              >
+                Ver relatórios
+              </Link>
+              <Link
                 href="/login"
                 className="bg-white hover:bg-gray-100 transition text-blue-800 font-medium text-sm rounded-full px-5 py-2"
               >
