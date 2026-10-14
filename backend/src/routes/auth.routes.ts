@@ -5,12 +5,13 @@ import { env } from "../lib/env.js";
 import { HttpError } from "../lib/http-error.js";
 import { prisma } from "../lib/prisma.js";
 import { autenticar } from "../middlewares/auth.js";
+import { limiteLogin } from "../middlewares/rate-limit.js";
 import { loginSchema } from "../schemas/index.js";
 
 export const authRoutes = Router();
 
 // POST /api/auth/login  { email, senha }  ->  { token, usuario }
-authRoutes.post("/login", async (req, res) => {
+authRoutes.post("/login", limiteLogin, async (req, res) => {
   const { email, senha } = loginSchema.parse(req.body);
 
   const usuario = await prisma.usuario.findUnique({ where: { email: email.toLowerCase() } });

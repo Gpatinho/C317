@@ -3,12 +3,14 @@ import { hashCodigo } from "../lib/codigo-acesso.js";
 import { HttpError } from "../lib/http-error.js";
 import { inicioDoMes, parseMes } from "../lib/periodo.js";
 import { prisma } from "../lib/prisma.js";
+import { limiteColeta } from "../middlewares/rate-limit.js";
 import { acessoColetaSchema, envioColetaSchema } from "../schemas/index.js";
 
 // Rotas PÚBLICAS do formulário de autopreenchimento (item 6 da proposta).
 // O estabelecimento se identifica pelo código de acesso gerado pela SMCELT.
 // Nada daqui vai direto para o dashboard: todo envio entra como PENDENTE.
 export const coletaRoutes = Router();
+coletaRoutes.use(limiteColeta);
 
 function formatar<T extends { valor: unknown; periodo: Date }>(s: T) {
   return { ...s, valor: Number(s.valor), periodo: s.periodo.toISOString().slice(0, 7) };
