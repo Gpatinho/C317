@@ -27,10 +27,12 @@ const indicadorBase = z.object({
   descricao: z.string().trim().max(255).nullish(),
   agregacao: z.enum(["SOMA", "ULTIMO", "MEDIA"]),
   ativo: z.boolean(),
+  coletaEstabelecimento: z.boolean(),
 });
 export const indicadorSchema = indicadorBase.extend({
   agregacao: indicadorBase.shape.agregacao.default("SOMA"),
   ativo: indicadorBase.shape.ativo.default(true),
+  coletaEstabelecimento: indicadorBase.shape.coletaEstabelecimento.default(false),
 });
 export const indicadorUpdateSchema = indicadorBase.partial();
 
@@ -105,4 +107,26 @@ export const atrativoSchema = z.object({
   descricao: z.string().trim().max(5000).nullish(),
   endereco: z.string().trim().max(255).nullish(),
   contato: z.string().trim().max(120).nullish(),
+});
+
+// ---- Coleta pelos estabelecimentos ----
+const codigoAcesso = z.string("Informe o código de acesso").trim().min(8, "Código de acesso inválido").max(12, "Código de acesso inválido");
+
+export const acessoColetaSchema = z.object({ codigo: codigoAcesso });
+
+export const envioColetaSchema = z.object({
+  codigo: codigoAcesso,
+  indicadorId: z.coerce.number().int().positive(),
+  valor: z.coerce.number().nonnegative("O valor não pode ser negativo"),
+  periodo: mes,
+  observacao: z.string().trim().max(1000).nullish(),
+});
+
+export const filtroSubmissoesSchema = z.object({
+  status: z.enum(["PENDENTE", "APROVADA", "REJEITADA"]).optional(),
+  estabelecimentoId: z.coerce.number().int().positive().optional(),
+});
+
+export const rejeicaoSchema = z.object({
+  motivo: z.string("Informe o motivo da rejeição").trim().min(3, "Explique o motivo da rejeição").max(255),
 });

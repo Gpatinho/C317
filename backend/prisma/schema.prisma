@@ -1,5 +1,6 @@
 // Modelo de dados do Observatório do Turismo de SRS (Milestone III).
-// Tabelas: usuario, indicador, estabelecimento, registro_indicador e relatorio.
+// Tabelas: usuario, indicador, estabelecimento, registro_indicador, relatorio,
+// evento, atrativo e submissao (coleta pelos estabelecimentos).
 
 generator client {
   provider = "prisma-client"
@@ -26,27 +27,31 @@ enum Agregacao {
 }
 
 model Usuario {
-  id         Int                 @id @default(autoincrement())
-  nome       String              @db.VarChar(120)
-  email      String              @unique @db.VarChar(160)
-  senhaHash  String              @map("senha_hash") @db.VarChar(255)
-  papel      Papel               @default(ADMIN)
-  criadoEm   DateTime            @default(now()) @map("criado_em")
-  registros  RegistroIndicador[]
-  relatorios Relatorio[]
+  id                   Int                 @id @default(autoincrement())
+  nome                 String              @db.VarChar(120)
+  email                String              @unique @db.VarChar(160)
+  senhaHash            String              @map("senha_hash") @db.VarChar(255)
+  papel                Papel               @default(ADMIN)
+  criadoEm             DateTime            @default(now()) @map("criado_em")
+  registros            RegistroIndicador[]
+  relatorios           Relatorio[]
+  submissoesAnalisadas Submissao[] // envios dos estabelecimentos que este usuário aprovou/rejeitou
 
   @@map("usuario")
 }
 
 model Indicador {
-  id        Int                 @id @default(autoincrement())
-  nome      String              @db.VarChar(120)
-  categoria String              @db.VarChar(60) // setor: Hospedagem, Leitos, Empresas, Empregos, Visitantes...
-  unidade   String              @db.VarChar(30)
-  descricao String?             @db.VarChar(255)
-  agregacao Agregacao           @default(SOMA)
-  ativo     Boolean             @default(true)
-  registros RegistroIndicador[]
+  id                    Int                 @id @default(autoincrement())
+  nome                  String              @db.VarChar(120)
+  categoria             String              @db.VarChar(60) // setor: Hospedagem, Leitos, Empresas, Empregos, Visitantes...
+  unidade               String              @db.VarChar(30)
+  descricao             String?             @db.VarChar(255)
+  agregacao             Agregacao           @default(SOMA)
+  ativo                 Boolean             @default(true)
+  // true = os estabelecimentos podem enviar este indicador pelo formulário de coleta
+  coletaEstabelecimento Boolean             @default(false) @map("coleta_estabelecimento")
+  registros             RegistroIndicador[]
+  submissoes            Submissao[]
 
   @@unique([nome, categoria])
   @@index([categoria])
@@ -54,30 +59,36 @@ model Indicador {
 }
 
 model Estabelecimento {
-  id        Int                 @id @default(autoincrement())
-  nome      String              @db.VarChar(160)
-  categoria String              @db.VarChar(60) // hotel, pousada, restaurante...
-  endereco  String?             @db.VarChar(255)
-  regiao    String?             @db.VarChar(80)
-  registros RegistroIndicador[]
+  id               Int                 @id @default(autoincrement())
+  nome             String              @db.VarChar(160)
+  categoria        String              @db.VarChar(60) // hotel, pousada, restaurante...
+  endereco         String?             @db.VarChar(255)
+  regiao           String?             @db.VarChar(80)
+  // Hash (SHA-256) do código que o estabelecimento usa na coleta. O código em si nunca é salvo.
+  codigoAcessoHash String?             @unique @map("codigo_acesso_hash") @db.Char(64)
+  registros        RegistroIndicador[]
+  submissoes       Submissao[]
 
   @@map("estabelecimento")
 }
 
 model RegistroIndicador {
-  id                Int              @id @default(autoincrement())
-  indicadorId       Int              @map("indicador_id")
+  id                Int      @id @default(autoincrement())
+  indicadorId       Int      @map("indicador_id")
   // NULL = valor consolidado do município (não vem de um estabelecimento específico)
-  estabelecimentoId Int?             @map("estabelecimento_id")
-  usuarioId         Int              @map("usuario_id")
-  valor             Decimal          @db.Decimal(14, 2)
-  periodo           DateTime         @db.Date // sempre o 1º dia do mês de referência
-  criadoEm          DateTime         @default(now()) @map("criado_em")
-  atualizadoEm      DateTime         @updatedAt @map("atualizado_em")
+  estabelecimentoId Int?     @map("estabelecimento_id")
+  usuarioId         Int      @map("usuario_id")
+  valor             Decimal  @db.Decimal(14, 2)
+  periodo           DateTime @db.Date // sempre o 1º dia do mês de referência
+  criadoEm          DateTime @default(now()) @map("criado_em")
+  atualizadoEm      DateTime @updatedAt @map("atualizado_em")
 
   indicador       Indicador        @relation(fields: [indicadorId], references: [id], onDelete: Cascade)
-  estabelecimento Estabelecimento? @relation(fields: [estabelecimentoId], references: [id], onDelete: SetNull)
+  // Restrict: um estabelecimento com valores publicados não pode ser apagado. Com SetNull, os
+  // valores dele virariam "valor do município" (estabelecimento_id NULL) e distorceriam o dashboard.
+  estabelecimento Estabelecimento? @relation(fields: [estabelecimentoId], references: [id], onDelete: Restrict)
   usuario         Usuario          @relation(fields: [usuarioId], references: [id])
+  submissao       Submissao? // preenchido quando o valor veio de um envio aprovado
 
   @@index([indicadorId, periodo])
   @@index([estabelecimentoId])
@@ -98,7 +109,6 @@ model Relatorio {
 
   @@map("relatorio")
 }
-
 
 // Agenda de eventos
 model Evento {
@@ -135,4 +145,37 @@ model Atrativo {
 
   @@index([tipo, categoria])
   @@map("atrativo")
+}
+
+// Coleta pelos estabelecimentos (item 6 da proposta)
+// O hotel envia o próprio dado, que fica PENDENTE até a SMCELT aprovar.
+// Ao aprovar, a API cria o registro_indicador e só então o valor aparece no dashboard.
+enum StatusSubmissao {
+  PENDENTE
+  APROVADA
+  REJEITADA
+}
+
+model Submissao {
+  id                Int             @id @default(autoincrement())
+  estabelecimentoId Int             @map("estabelecimento_id")
+  indicadorId       Int             @map("indicador_id")
+  valor             Decimal         @db.Decimal(14, 2)
+  periodo           DateTime        @db.Date // 1º dia do mês de referência
+  observacao        String?         @db.Text // comentário opcional do estabelecimento
+  status            StatusSubmissao @default(PENDENTE)
+  motivoRejeicao    String?         @map("motivo_rejeicao") @db.VarChar(255)
+  enviadoEm         DateTime        @default(now()) @map("enviado_em")
+  analisadoEm       DateTime?       @map("analisado_em")
+  analisadoPorId    Int?            @map("analisado_por_id")
+  registroId        Int?            @unique @map("registro_id") // registro criado na aprovação
+
+  estabelecimento Estabelecimento    @relation(fields: [estabelecimentoId], references: [id], onDelete: Cascade)
+  indicador       Indicador          @relation(fields: [indicadorId], references: [id], onDelete: Cascade)
+  analisadoPor    Usuario?           @relation(fields: [analisadoPorId], references: [id], onDelete: SetNull)
+  registro        RegistroIndicador? @relation(fields: [registroId], references: [id], onDelete: SetNull)
+
+  @@index([status, enviadoEm])
+  @@index([estabelecimentoId])
+  @@map("submissao")
 }
