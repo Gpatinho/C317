@@ -17,4 +17,8 @@ const adapter = new PrismaMariaDb({
   allowPublicKeyRetrieval: true,
 });
 
-export const prisma = new PrismaClient({ adapter });
+export const prisma = new PrismaClient({
+  adapter,
+  // Nunca devolve o hash do código de acesso nas respostas da API
+  omit: { estabelecimento: { codigoAcessoHash: true } },
+});

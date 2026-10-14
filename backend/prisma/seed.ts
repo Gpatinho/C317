@@ -7,6 +7,7 @@
  * Rodar: npm run db:seed
  */
 import bcrypt from "bcryptjs";
+import { hashCodigo } from "../src/lib/codigo-acesso.js";
 import { prisma } from "../src/lib/prisma.js";
 import { Agregacao } from "../src/generated/prisma/enums.js";
 
@@ -99,7 +100,24 @@ async function main() {
       ],
     });
     console.log("✔ Estabelecimentos de exemplo");
+  }// ---- Coleta pelos estabelecimentos ----
+  // Indicadores que os próprios hotéis e pousadas podem enviar
+  await prisma.indicador.updateMany({
+    where: { nome: { in: ["Taxa de ocupação", "Leitos disponíveis"] } },
+    data: { coletaEstabelecimento: true },
+  });
+  // Códigos de TESTE (no uso real, a SMCELT gera pela rota POST /api/estabelecimentos/:id/codigo)
+  const codigosTeste = [
+    { nome: "Hotel Exemplo Centro (fictício)", codigo: "CENT-2026" },
+    { nome: "Pousada Exemplo da Serra (fictícia)", codigo: "SERR-2026" },
+  ];
+  for (const { nome, codigo } of codigosTeste) {
+    await prisma.estabelecimento.updateMany({
+      where: { nome, codigoAcessoHash: null },
+      data: { codigoAcessoHash: hashCodigo(codigo) },
+    });
   }
+  console.log("✔ Coleta: códigos de teste CENT-2026 (hotel) e SERR-2026 (pousada)");
 
   if ((await prisma.evento.count()) === 0) {
     const d = (iso: string) => new Date(iso);
