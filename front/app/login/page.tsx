@@ -2,11 +2,22 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, useSyncExternalStore, type FormEvent } from "react";
 import { api } from "@/lib/api";
+
+// Lê "?expirou=1" da URL (o painel manda para cá quando a sessão vence).
+// No servidor não existe URL, então lá o valor é sempre false.
+function useSessaoExpirada() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => new URLSearchParams(window.location.search).has("expirou"),
+    () => false,
+  );
+}
 
 export default function LoginAdmin() {
   const router = useRouter();
+  const sessaoExpirada = useSessaoExpirada();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -20,8 +31,7 @@ export default function LoginAdmin() {
     setEnviando(true);
     try {
       await api.login(email, senha, lembrarDeMim);
-      // TODO: trocar para o painel administrativo quando a página existir
-      router.push("/dashboard");
+      router.push("/admin");
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Não foi possível entrar.");
       setEnviando(false);
@@ -57,6 +67,12 @@ export default function LoginAdmin() {
         <p className="text-center text-sm text-gray-500 mb-8">
           Painel Administrativo
         </p>
+
+        {sessaoExpirada && (
+          <p role="status" className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 mb-5">
+            Sua sessão expirou. Entre novamente para continuar.
+          </p>
+        )}
 
         <label className="block text-xs font-semibold tracking-wide text-gray-500 mb-1">
           E-MAIL
