@@ -58,6 +58,16 @@ export type Registro = {
   usuario: { id: number; nome: string };
 };
 
+export type Estabelecimento = { id: number; nome: string; categoria: string };
+
+// Corpo de POST/PUT /api/registros. estabelecimentoId null = valor do município.
+export type DadosRegistro = {
+  indicadorId: number;
+  valor: number;
+  periodo: string; // "2026-09"
+  estabelecimentoId?: number | null;
+};
+
 export type ContagemSubmissoes = { PENDENTE: number; APROVADA: number; REJEITADA: number };
 
 // Erro da API com o código HTTP. status 401 = sessão expirada/inválida;
@@ -132,8 +142,12 @@ export const api = {
       `/dashboard/serie${qs({ indicadorId, inicio, fim })}`,
     ),
 
-  lancarValor: (dados: { indicadorId: number; valor: number; periodo: string; estabelecimentoId?: number }) =>
-    request("/registros", { method: "POST", body: JSON.stringify(dados) }),
+  lancarValor: (dados: DadosRegistro) =>
+    request<Registro>("/registros", { method: "POST", body: JSON.stringify(dados) }),
+  editarRegistro: (id: number, dados: DadosRegistro) =>
+    request<Registro>(`/registros/${id}`, { method: "PUT", body: JSON.stringify(dados) }),
+  excluirRegistro: (id: number) => request<void>(`/registros/${id}`, { method: "DELETE" }),
+  estabelecimentos: () => request<Estabelecimento[]>("/estabelecimentos"),
 
   registros: () => request<Registro[]>("/registros"),
   contagemSubmissoes: () => request<ContagemSubmissoes>("/submissoes/contagem"),
