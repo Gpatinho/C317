@@ -108,6 +108,31 @@ async function request<T>(caminho: string, opcoes: RequestInit = {}): Promise<T>
   return dados as T;
 }
 
+// Igual ao request(), mas para upload de arquivo mostrando o progresso (o fetch não informa
+// quanto já foi enviado, por isso aqui usamos XMLHttpRequest).
+function enviarComProgresso<T>(caminho: string, form: FormData, onProgresso?: (porcento: number) => void) {
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${API_URL}${caminho}`);
+    const t = token();
+    if (t) xhr.setRequestHeader("Authorization", `Bearer ${t}`);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgresso?.(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      let dados: { erro?: string } = {};
+      try {
+        dados = JSON.parse(xhr.responseText);
+      } catch {}
+      if (xhr.status >= 200 && xhr.status < 300) resolve(dados as T);
+      else reject(new ApiError(xhr.status, dados.erro ?? "Erro ao acessar a API"));
+    };
+    xhr.onerror = () =>
+      reject(new ApiError(0, "Não foi possível conectar ao servidor. Tente novamente em instantes."));
+    xhr.send(form);
+  });
+}
+
 const qs = (params: Record<string, string | number | undefined>) => {
   const p = Object.entries(params).filter(([, v]) => v !== undefined && v !== "");
   return p.length ? `?${new URLSearchParams(p.map(([k, v]) => [k, String(v)]))}` : "";
@@ -155,5 +180,9 @@ export const api = {
 
   relatorios: () => request<Relatorio[]>("/relatorios"),
   urlDownload: (id: number) => `${API_URL}/relatorios/${id}/download`,
-  publicarRelatorio: (form: FormData) => request<Relatorio>("/relatorios", { method: "POST", body: form }),
+  publicarRelatorio: (form: FormData, onProgresso?: (porcento: number) => void) =>
+    enviarComProgresso<Relatorio>("/relatorios", form, onProgresso),
+  editarRelatorio: (id: number, dados: { titulo: string; descricao: string; ano?: number }) =>
+    request<Relatorio>(`/relatorios/${id}`, { method: "PUT", body: JSON.stringify(dados) }),
+  excluirRelatorio: (id: number) => request<void>(`/relatorios/${id}`, { method: "DELETE" }),
 };
