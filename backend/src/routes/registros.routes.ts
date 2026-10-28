@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { Prisma } from "../generated/prisma/client.js";
 import { HttpError } from "../lib/http-error.js";
-import { parseMes } from "../lib/periodo.js";
+import { inicioDoMes, parseMes } from "../lib/periodo.js";
 import { prisma } from "../lib/prisma.js";
 import { autenticar, exigirPapel } from "../middlewares/auth.js";
 import { filtroRegistrosSchema, idParam, registroSchema } from "../schemas/index.js";
@@ -57,6 +57,13 @@ async function garantirSemDuplicado(
   }
 }
 
+// O front já esconde os meses futuros, mas a API também precisa recusar
+function garantirMesIniciado(periodo: Date) {
+  if (periodo > inicioDoMes(new Date())) {
+    throw new HttpError(400, "Não é possível lançar valores de um mês que ainda não começou.");
+  }
+}
+
 // POST /api/registros  { indicadorId, estabelecimentoId?, valor, periodo: "2026-03" }
 registrosRoutes.post("/", autenticar, async (req, res) => {
   const d = registroSchema.parse(req.body);
@@ -65,6 +72,7 @@ registrosRoutes.post("/", autenticar, async (req, res) => {
     estabelecimentoId: d.estabelecimentoId ?? null,
     periodo: parseMes(d.periodo),
   };
+  garantirMesIniciado(dados.periodo);
   await garantirSemDuplicado(dados);
 
   const registro = await prisma.registroIndicador.create({
@@ -85,6 +93,7 @@ registrosRoutes.put("/:id", autenticar, async (req, res) => {
     estabelecimentoId: d.estabelecimentoId !== undefined ? d.estabelecimentoId : atual.estabelecimentoId,
     periodo: d.periodo ? parseMes(d.periodo) : atual.periodo,
   };
+  garantirMesIniciado(dados.periodo);
   await garantirSemDuplicado(dados, id);
 
   const registro = await prisma.registroIndicador.update({
