@@ -30,12 +30,36 @@ npm run dev
 ```
 
 Login de teste: `admin@observatorio.local` / `admin123` (mude no `.env` antes do seed).
+Também é criado um EDITOR: `editor@observatorio.local` / `editor123`.
+
+Para testar o sistema inteiro pelas telas com esses dados, siga o [roteiro de testes](../docs/roteiro-de-testes.md).
 
 > **Depois de um `git pull` que mexeu no `schema.prisma`**, rode `npx prisma migrate dev` e em seguida `npx prisma generate`.
 > No Prisma 7 o `migrate dev` **não** regera o client sozinho: sem o `generate`, o TypeScript acusa que tabelas e campos novos "não existem".
 
 Para testar as rotas sem o front, use o arquivo `requests.http` com a extensão **REST Client** do VS Code.
 Para ver/editar o banco visualmente: `npm run db:studio`.
+
+## Testes
+
+Feitos com **Vitest** + **Supertest**, em duas partes:
+
+| Comando | O que roda | Precisa do MySQL? |
+|---|---|---|
+| `npm run test:unit` | Funções puras: cálculos do dashboard, datas, códigos de acesso e validações | Não |
+| `npm test` | Tudo: os unitários e os de integração (requisições HTTP de verdade na API) | Sim |
+| `npm run test:watch` | Igual ao `npm test`, mas roda de novo a cada arquivo salvo | Sim |
+
+Os testes de integração usam um banco **separado**, `observatorio_test`, no mesmo MySQL do `.env`.
+Ele é apagado e recriado a cada execução, então os dados do banco `observatorio` não são tocados.
+Não precisa criar esse banco: o Prisma cria sozinho. Para usar outro servidor, defina `DATABASE_URL_TEST` no `.env`
+(o nome do banco precisa terminar em `_test`).
+
+```
+tests/
+├── unit/          # sem banco
+└── integracao/    # API + MySQL (um arquivo por recurso; helpers.ts cria usuários, indicadores...)
+```
 
 ## Estrutura
 
