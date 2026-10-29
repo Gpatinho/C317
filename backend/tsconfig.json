@@ -8,5 +8,5 @@
     "skipLibCheck": true,
     "outDir": "dist"
   },
-  "include": ["src", "prisma"]
+  "include": ["src", "prisma", "tests", "vitest.config.ts"]
 }

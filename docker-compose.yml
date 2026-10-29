@@ -6,7 +6,9 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: observatorio
     ports:
-      - "3306:3306"
+      # Porta no seu computador. Se já tem um MySQL instalado na 3306, use outra:
+      # MYSQL_PORTA=3307 docker compose up -d   (e use a mesma porta no backend/.env)
+      - "${MYSQL_PORTA:-3306}:3306"
     volumes:
       - mysql-dados:/var/lib/mysql
     healthcheck:
