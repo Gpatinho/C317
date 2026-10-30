@@ -11,20 +11,11 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
-import { api, type CardResumo, type Indicador, type Resumo } from "@/lib/api";
+import { api, type CardResumo, type Evento, type Indicador, type Resumo } from "@/lib/api";
 
-// Categorias de filtro.
-// PENDENTE: estas categorias (tipos de atração) não existem no back-end, que hoje
-// agrupa os indicadores por setor (Visitantes, Hospedagem...). Ainda não filtram nada.
-const categorias = [
-  "Visão geral",
-  "Restaurantes",
-  "Picos",
-  "Montanhas",
-  "Festas",
-  "Eventos",
-  "Pontos conhecidos",
-];
+// Filtro por setor: os setores vêm da API (GET /api/indicadores/categorias).
+// "" = visão geral (todos os setores).
+const VISAO_GERAL = "";
 
 const icones: Record<string, string> = {
   Visitantes: "👥",
@@ -75,57 +66,43 @@ function hojeISO() {
 
 type Serie = { periodo: string; valor: number | null }[];
 
-// Eventos futuros exibidos no carrossel (mock).
-// PENDENTE: o back-end ainda não tem eventos.
-const eventosFuturos = [
-  {
-    icone: "🎵",
-    nome: "Festival de Inverno de Santa Rita",
-    data: "12 a 14 de julho",
-    local: "Praça Central",
-    perfil: "@festivaldeinvernosrs",
-    acesso: "Gratuito",
-  },
-  {
-    icone: "⚙",
-    nome: "Feira de Eletrônica e Inovação",
-    data: "22 de agosto",
-    local: "Inatel - Campus SRS",
-    perfil: "@inatel.oficial",
-    acesso: "Gratuito",
-  },
-  {
-    icone: "🪂",
-    nome: "Encontro de Voo Livre na Serra",
-    data: "5 de setembro",
-    local: "Rampa do Zeza",
-    perfil: "voolivresrs",
-    acesso: "Pago",
-  },
-  {
-    icone: "✨",
-    nome: "Festa do Padroeiro",
-    data: "3 a 6 de outubro",
-    local: "Igreja Matriz",
-    perfil: "@paroquiasrs",
-    acesso: "Gratuito",
-  },
+const MESES_EXTENSO = [
+  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
 ];
 
+// Datas do evento por extenso, sem new Date() (que mostraria o dia anterior no fuso do Brasil):
+// "12 a 14 de julho de 2027", "28 de junho a 2 de julho de 2027", "22 de agosto de 2027"
+function dataEvento(e: Evento) {
+  const [ai, mi, di] = e.dataInicio.slice(0, 10).split("-").map(Number);
+  const fim = e.dataFim?.slice(0, 10);
+  const ano = ai === new Date().getFullYear() ? "" : ` de ${ai}`;
+  if (!fim || fim === e.dataInicio.slice(0, 10)) return `${di} de ${MESES_EXTENSO[mi - 1]}${ano}`;
+  const [af, mf, df] = fim.split("-").map(Number);
+  const anoFim = af === new Date().getFullYear() ? "" : ` de ${af}`;
+  if (ai === af && mi === mf) return `${di} a ${df} de ${MESES_EXTENSO[mi - 1]}${ano}`;
+  return `${di} de ${MESES_EXTENSO[mi - 1]} a ${df} de ${MESES_EXTENSO[mf - 1]}${anoFim}`;
+}
+
 export default function Dashboard() {
-  const [categoriaSelecionada, setCategoriaSelecionada] =
-    useState("Visão geral");
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState(VISAO_GERAL);
+  const [categorias, setCategorias] = useState<string[]>([]);
+  const [eventos, setEventos] = useState<{ lista?: Evento[]; erro?: boolean }>({});
   const [inicio, setInicio] = useState(() => `${new Date().getFullYear()}-01-01`);
   const [fim, setFim] = useState(hojeISO);
 
   // A API trabalha com meses ("2026-03"); os inputs de data dão o dia também.
-  const filtro = { inicio: inicio.slice(0, 7), fim: fim.slice(0, 7) };
-  const chave = `${filtro.inicio}|${filtro.fim}`;
+  const filtro = {
+    inicio: inicio.slice(0, 7),
+    fim: fim.slice(0, 7),
+    categoria: categoriaSelecionada || undefined,
+  };
+  const chave = `${filtro.inicio}|${filtro.fim}|${categoriaSelecionada}`;
 
   const [dados, setDados] = useState<{
     chave: string;
     resumo?: Resumo;
-    visitantes?: CardResumo;
+    principal?: CardResumo; // indicador mostrado no gráfico
     serie?: Serie;
     erro?: string;
   }>();
@@ -138,11 +115,14 @@ export default function Dashboard() {
     (async () => {
       try {
         const resumo = await api.resumo(filtro);
-        const visitantes = resumo.cards.find((c) => c.indicador.categoria === "Visitantes");
-        const serie = visitantes
-          ? (await api.serie(visitantes.indicador.id, filtro.inicio, filtro.fim)).serie
+        // O gráfico mostra Visitantes na visão geral; com um setor escolhido,
+        // o primeiro indicador desse setor.
+        const principal =
+          resumo.cards.find((c) => c.indicador.categoria === "Visitantes") ?? resumo.cards[0];
+        const serie = principal
+          ? (await api.serie(principal.indicador.id, filtro.inicio, filtro.fim)).serie
           : undefined;
-        if (!cancelado) setDados({ chave, resumo, visitantes, serie });
+        if (!cancelado) setDados({ chave, resumo, principal, serie });
       } catch (err) {
         if (!cancelado) {
           setDados({ chave, erro: err instanceof Error ? err.message : "Erro ao carregar os dados." });
@@ -156,13 +136,33 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `chave` resume o filtro
   }, [chave]);
 
+  // Setores para os botões de filtro e próximos eventos: carregados uma vez
+  useEffect(() => {
+    let cancelado = false;
+    api
+      .categorias()
+      .then((lista) => !cancelado && setCategorias(lista))
+      .catch(() => {}); // sem setores, fica só a "Visão geral"
+    api
+      .eventos({ futuros: true, limite: 4 })
+      .then((lista) => !cancelado && setEventos({ lista }))
+      .catch(() => !cancelado && setEventos({ erro: true }));
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
   const resumo = dados?.resumo;
+  const principal = dados?.principal?.indicador;
+  const ehVisitantes = !principal || principal.categoria === "Visitantes";
   const serie = dados?.serie ?? [];
   const variosAnos = filtro.inicio.slice(0, 4) !== filtro.fim.slice(0, 4);
   const dadosGrafico = serie.map((p) => ({
     mes: variosAnos ? nomeMes(p.periodo) : MESES[Number(p.periodo.slice(5)) - 1],
-    visitantes: p.valor,
+    valor: p.valor,
   }));
+  const valorGrafico = (v: number) =>
+    principal?.unidade === "%" ? `${numero(v)}%` : `${numero(v)} ${principal?.unidade ?? ""}`.trim();
   const comValor = serie.filter((p): p is { periodo: string; valor: number } => p.valor !== null);
   const pico = comValor.reduce<(typeof comValor)[number] | undefined>(
     (maior, p) => (!maior || p.valor > maior.valor ? p : maior),
@@ -258,17 +258,18 @@ export default function Dashboard() {
                 CATEGORIA
               </label>
               <div className="flex flex-wrap gap-2">
-                {categorias.map((categoria) => (
+                {[VISAO_GERAL, ...categorias].map((categoria) => (
                   <button
-                    key={categoria}
+                    key={categoria || "geral"}
                     onClick={() => setCategoriaSelecionada(categoria)}
+                    aria-pressed={categoriaSelecionada === categoria}
                     className={`text-sm px-4 py-1.5 rounded-full border transition ${
                       categoriaSelecionada === categoria
                         ? "bg-violet-50 text-violet-700 border-violet-400 font-medium"
                         : "border-gray-300 text-gray-600 hover:border-violet-300"
                     }`}
                   >
-                    {categoria}
+                    {categoria || "Visão geral"}
                   </button>
                 ))}
               </div>
@@ -345,7 +346,9 @@ export default function Dashboard() {
 
         {resumo && resumo.cards.length === 0 && (
           <p className="md:col-span-3 text-sm text-gray-500 bg-white rounded-2xl shadow-sm p-5">
-            Nenhum indicador cadastrado ainda.
+            {categoriaSelecionada
+              ? `Nenhum indicador no setor ${categoriaSelecionada}.`
+              : "Nenhum indicador cadastrado ainda."}
           </p>
         )}
       </section>
@@ -356,22 +359,23 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="font-semibold text-gray-800">
-                Evolução mensal de visitantes
+                {ehVisitantes ? "Evolução mensal de visitantes" : `Evolução mensal: ${principal?.nome}`}
               </h2>
               <p className="text-xs text-gray-500">
-                Estimativa de fluxo turístico de {nomeMes(filtro.inicio)} a {nomeMes(filtro.fim)}
+                {ehVisitantes ? "Estimativa de fluxo turístico" : principal?.descricao ?? "Valores mensais"} de{" "}
+                {nomeMes(filtro.inicio)} a {nomeMes(filtro.fim)}
               </p>
             </div>
             <span className="hidden md:flex items-center gap-1.5 text-xs text-gray-500">
               <span className="w-2 h-2 rounded-full bg-violet-600" />
-              Visitantes
+              {principal?.nome ?? "Visitantes"}
             </span>
           </div>
 
           <div className={`h-72 transition-opacity ${carregando ? "opacity-50" : ""}`}>
             {!carregando && comValor.length === 0 ? (
               <p className="h-full flex items-center justify-center text-sm text-gray-400">
-                Sem dados de visitantes para o período selecionado.
+                Sem dados {ehVisitantes ? "de visitantes" : `de ${principal?.nome ?? "indicadores"}`} para o período selecionado.
               </p>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -384,20 +388,20 @@ export default function Dashboard() {
                     tickLine={false}
                   />
                   <YAxis
-                    tickFormatter={(v) => `${v / 1000} mil`}
+                    tickFormatter={(v) => (v >= 10000 ? `${v / 1000} mil` : numero(v))}
                     tick={{ fontSize: 12, fill: "#9ca3af" }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <Tooltip
                     formatter={(value) => [
-                      typeof value === "number" ? `${numero(value)} visitantes` : "sem dado",
+                      typeof value === "number" ? valorGrafico(value) : "sem dado",
                       "",
                     ]}
                   />
                   <Line
                     type="monotone"
-                    dataKey="visitantes"
+                    dataKey="valor"
                     stroke="#6C5CE0"
                     strokeWidth={2.5}
                     dot={{ r: 4, fill: "#6C5CE0" }}
@@ -407,11 +411,12 @@ export default function Dashboard() {
             )}
           </div>
 
-          {dados?.visitantes?.valor != null && pico && (
+          {pico && (
             <p className="text-xs text-gray-500 mt-4 flex items-center gap-1.5">
               <span className="text-violet-500">●</span>
-              {numero(dados.visitantes.valor)} visitantes no período, com pico em{" "}
-              {nomeMes(pico.periodo)} ({numero(pico.valor)}).
+              {ehVisitantes && dados?.principal?.valor != null
+                ? `${numero(dados.principal.valor)} visitantes no período, com pico em ${nomeMes(pico.periodo)} (${numero(pico.valor)}).`
+                : `Maior valor em ${nomeMes(pico.periodo)}: ${valorGrafico(pico.valor)}.`}
             </p>
           )}
         </div>
@@ -451,49 +456,46 @@ export default function Dashboard() {
               A agenda que ajuda a explicar os próximos picos de visitação.
             </p>
           </div>
-          <Link
-            href="/eventos"
-            className="text-sm font-medium text-violet-700 hover:text-violet-800 flex items-center gap-1"
-          >
-            Ver agenda completa →
-          </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {eventosFuturos.map((evento) => (
-            <div
-              key={evento.nome}
-              className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium text-violet-700">
-                  {evento.data}
-                </span>
-                <span
-                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                    evento.acesso === "Gratuito"
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-amber-100 text-amber-700"
-                  }`}
-                >
-                  {evento.acesso}
-                </span>
-              </div>
+        {eventos.erro ? (
+          <p className="text-sm text-gray-500 bg-white border border-gray-200 rounded-xl p-4">
+            Não foi possível carregar os eventos agora.
+          </p>
+        ) : eventos.lista?.length === 0 ? (
+          <p className="text-sm text-gray-500 bg-white border border-gray-200 rounded-xl p-4">
+            Nenhum evento agendado no momento.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {!eventos.lista &&
+              [0, 1, 2, 3].map((i) => (
+                <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 h-40 animate-pulse" />
+              ))}
+            {eventos.lista?.map((evento) => (
+              <div key={evento.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-medium text-violet-700">{dataEvento(evento)}</span>
+                  <span
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                      evento.gratuito ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {evento.gratuito ? "Gratuito" : "Pago"}
+                  </span>
+                </div>
 
-              <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center text-sm mb-2">
-                {evento.icone}
-              </div>
+                <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center text-sm mb-2">
+                  {evento.icone ?? "📅"}
+                </div>
 
-              <h3 className="font-semibold text-gray-800 text-sm mb-3">
-                {evento.nome}
-              </h3>
-              <p className="text-xs text-gray-500 mb-1">📍 {evento.local}</p>
-              <p className="text-xs text-gray-400">
-                Informações: {evento.perfil}
-              </p>
-            </div>
-          ))}
-        </div>
+                <h3 className="font-semibold text-gray-800 text-sm mb-3">{evento.nome}</h3>
+                <p className="text-xs text-gray-500 mb-1">📍 {evento.local}</p>
+                {evento.contato && <p className="text-xs text-gray-400">Informações: {evento.contato}</p>}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </main>
   );
