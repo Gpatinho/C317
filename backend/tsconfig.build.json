@@ -1,0 +1,10 @@
+{
+  // Compila só a API (src/) para JavaScript em dist/, usado na imagem Docker / produção.
+  // O tsconfig.json normal continua checando também o prisma/seed.ts.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src"]
+}

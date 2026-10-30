@@ -1,0 +1,7 @@
+# Não vai para dentro da imagem
+node_modules
+dist
+src/generated
+uploads
+.env
+*.log

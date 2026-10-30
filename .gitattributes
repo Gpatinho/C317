@@ -1,0 +1,3 @@
+# Scripts de shell sempre com final de linha Unix (LF), mesmo editados no Windows.
+# Com CRLF, o container da API não consegue executar o docker-entrypoint.sh.
+*.sh text eol=lf

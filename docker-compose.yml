@@ -1,4 +1,6 @@
-# Banco de dados do projeto. Para ligar: docker compose up -d
+# Banco de dados do projeto.
+#   Só o MySQL (para rodar a API com npm run dev):  docker compose up -d
+#   MySQL + API em containers:                       docker compose --profile completo up -d --build
 services:
   mysql:
     image: mysql:8
@@ -6,9 +8,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: observatorio
     ports:
-      # Porta no seu computador. Se já tem um MySQL instalado na 3306, use outra:
-      # MYSQL_PORTA=3307 docker compose up -d   (e use a mesma porta no backend/.env)
-      - "${MYSQL_PORTA:-3306}:3306"
+      - "3306:3306"
     volumes:
       - mysql-dados:/var/lib/mysql
     healthcheck:
@@ -16,5 +16,26 @@ services:
       interval: 5s
       retries: 20
 
+  # API em container (perfil "completo"): igual ao que roda em produção.
+  # Não liga no "docker compose up -d" simples, para não brigar pela porta 3333
+  # com quem roda a API pelo npm run dev.
+  api:
+    profiles: ["completo"]
+    build: ./backend
+    environment:
+      DATABASE_URL: mysql://root:root@mysql:3306/observatorio
+      # Segredo só para rodar localmente. Em produção, gere um próprio (veja docs/deploy.md).
+      JWT_SECRET: ${JWT_SECRET:-segredo-local-de-desenvolvimento-nao-usar-em-producao}
+      FRONTEND_URL: http://localhost:3000
+      RODAR_SEED: "true"
+    ports:
+      - "3333:3333"
+    volumes:
+      - uploads:/app/uploads   # PDFs dos relatórios sobrevivem a rebuilds do container
+    depends_on:
+      mysql:
+        condition: service_healthy
+
 volumes:
   mysql-dados:
+  uploads:

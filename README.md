@@ -34,8 +34,10 @@ C317/
 ├── docs/
 │   ├── mockups/         # protótipos do Figma, por tela
 │   ├── banco-de-dados.md   # diagrama e descrição das tabelas
-│   └── guia-api-front.md   # rotas usadas por cada tela, com exemplos
-└── docker-compose.yml   # MySQL pronto para rodar com Docker
+│   ├── guia-api-front.md   # rotas usadas por cada tela, com exemplos
+│   └── deploy.md           # como publicar (Docker, variáveis, migrations, PDFs)
+├── docker-compose.yml   # MySQL (e, opcionalmente, a API) com Docker
+└── .gitattributes       # mantém os scripts .sh com final de linha Unix
 ```
 
 ## Como rodar o projeto (primeira vez)
@@ -84,6 +86,17 @@ npm run dev                   # site em http://localhost:3000
 | Códigos de teste da coleta | `CENT-2026` (hotel) e `SERR-2026` (pousada) |
 
 Todos os dados do seed são **fictícios**, apenas para desenvolvimento e demonstração.
+
+### Alternativa: API também em container
+
+Para rodar a API exatamente como em produção (sem `npm install` no backend):
+
+```bash
+docker compose --profile completo up -d --build   # MySQL + API (migrations e seed automáticos)
+```
+
+A API fica em http://localhost:3333/api; o front continua com `npm run dev`. Detalhes e o passo a
+passo para publicar o sistema em `docs/deploy.md`.
 
 ## Dia a dia
 
