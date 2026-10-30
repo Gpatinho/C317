@@ -118,6 +118,24 @@ export const atrativoSchema = z.object({
   descricao: z.string().trim().max(5000).nullish(),
   endereco: z.string().trim().max(255).nullish(),
   contato: z.string().trim().max(120).nullish(),
+  horarioFuncionamento: z.string().trim().max(255).nullish(),
+  melhorHorario: z.string().trim().max(255).nullish(),
+  periodoMovimentado: z.string().trim().max(255).nullish(),
+  // Aceita "@inatel", "inatel" ou o link do perfil; guarda só o usuário
+  instagram: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/^(https?:\/\/)?(www\.)?instagram\.com\//i, "").replace(/^@/, "").replace(/\/.*$/, ""))
+    .pipe(z.string().regex(/^[A-Za-z0-9._]{1,30}$/, "Instagram inválido: use só o nome do perfil, ex.: inatel").or(z.literal("")))
+    .transform((v) => v || null)
+    .nullish(),
+});
+
+// Busca pública: texto livre no nome, na categoria ou no endereço
+export const buscaAtrativoSchema = z.object({
+  busca: z.string().trim().min(2, "Digite pelo menos 2 letras").max(80).optional(),
+  tipo: z.enum(["ATRATIVO", "EQUIPAMENTO", "SERVICO"]).optional(),
+  categoria: z.string().trim().min(2).max(60).optional(),
 });
 
 // ---- Coleta pelos estabelecimentos ----

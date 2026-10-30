@@ -121,7 +121,8 @@ backend/
 | PUT/DELETE 🔒 | `/api/relatorios/:id` | Edita / remove (apaga o arquivo também) |
 | GET | `/api/eventos?futuros=true&limite=4` | Agenda de eventos |
 | POST/PUT/DELETE 🔒 | `/api/eventos[/:id]` | Gerencia eventos (`dataInicio`/`dataFim` em `AAAA-MM-DD`) |
-| GET | `/api/atrativos?tipo=&categoria=` | Inventário turístico (`tipo`: ATRATIVO, EQUIPAMENTO, SERVICO) |
+| GET | `/api/atrativos?busca=&tipo=&categoria=` | Inventário turístico (`tipo`: ATRATIVO, EQUIPAMENTO, SERVICO). `busca` procura no nome, na categoria e no endereço, sem diferenciar maiúsculas nem acentos |
+| GET | `/api/atrativos/:id` | Um lugar, com horário de funcionamento, melhor horário, época mais movimentada e Instagram |
 | GET | `/api/atrativos/categorias?tipo=` | Categorias do inventário |
 | GET 🔒 | `/api/atrativos/revisao-pendente` | Itens sem revisão há mais de 12 meses |
 | POST/PUT/DELETE 🔒 | `/api/atrativos[/:id]` | Gerencia o inventário (editar conta como revisão) |

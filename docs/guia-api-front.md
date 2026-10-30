@@ -162,7 +162,9 @@ Data final antes da inicial → `400`.
 | Listar (público) | `GET /api/atrativos?tipo=ATRATIVO&categoria=Igreja` (filtros opcionais) | – |
 | Categorias de um tipo | `GET /api/atrativos/categorias?tipo=ATRATIVO` | – |
 | Atrasados 🔒 | `GET /api/atrativos/revisao-pendente` | – |
-| Criar 🔒 | `POST /api/atrativos` | `{ "nome", "tipo", "categoria", "descricao"?, "endereco"?, "contato"? }` |
+| Buscar pelo nome (público) | `GET /api/atrativos?busca=cruzeiro` (mínimo 2 letras; também procura na categoria e no endereço) | – |
+| Um lugar (público) | `GET /api/atrativos/:id` | – |
+| Criar 🔒 | `POST /api/atrativos` | `{ "nome", "tipo", "categoria", "descricao"?, "endereco"?, "contato"?, "horarioFuncionamento"?, "melhorHorario"?, "periodoMovimentado"?, "instagram"? }` |
 | Editar 🔒 | `PUT /api/atrativos/:id` | os campos que mudaram (conta como revisão) |
 | Marcar como revisado 🔒 | `POST /api/atrativos/:id/revisar` | – |
 | Excluir 🔒👑 | `DELETE /api/atrativos/:id` | – (`204`) |
@@ -174,6 +176,12 @@ Data final antes da inicial → `400`.
 { "id": 8, "nome": "Guia de Turismo Exemplo (fictício)", "tipo": "SERVICO", "categoria": "Guia de turismo",
   "descricao": null, "endereco": null, "contato": "(35) 0000-0000", "revisadoEm": "2024-11-20T00:00:00.000Z" }
 ```
+
+**Informações para o visitante** (todas opcionais, texto livre de até 255 caracteres): `horarioFuncionamento`,
+`melhorHorario` (melhor horário para visitar) e `periodoMovimentado` (época do ano mais frequentada).
+`instagram` aceita `@perfil`, `perfil` ou o link do perfil e a API guarda só o nome (`"inatel"`); string vazia apaga.
+O formulário do painel deve ter um campo para cada um. A página pública `/lugares/[id]` (já pronta) mostra esses dados,
+e a barra de busca do dashboard usa `?busca=`.
 
 `revisao-pendente` responde `{ "meses": 12, "total": 3, "atrativos": [ ... ] }`, mais atrasados primeiro.
 

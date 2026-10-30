@@ -115,3 +115,23 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "motivo": "Valor muito diferente dos meses anteriores. Confira e envie de novo." }
+
+### ---- Inventário: busca e página do lugar ----
+
+### Buscar lugares pelo nome (sem diferenciar maiúsculas e acentos)
+GET {{api}}/atrativos?busca=cruzeiro
+
+### Detalhes de um lugar (horários, melhor horário, época mais movimentada, Instagram)
+GET {{api}}/atrativos/1
+
+### Preencher as informações para o visitante (o Instagram aceita @perfil, perfil ou o link)
+PUT {{api}}/atrativos/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "horarioFuncionamento": "Todos os dias, 7h às 19h",
+  "melhorHorario": "Fim da tarde",
+  "periodoMovimentado": "Feriados e Semana Santa",
+  "instagram": "@perfil.do.lugar"
+}

@@ -34,7 +34,7 @@ npm run dev                        # site em http://localhost:3000
 | Envios da coleta | 2 pendentes (hóspedes de set/2026), 1 aprovado, 1 rejeitado (ocupação de 108%) |
 | Relatórios | 3 PDFs: 1 de 2026 e 2 de 2025 |
 | Eventos | 7, sendo 1 que já terminou (Semana do Turismo, set/2026) |
-| Inventário | 5 itens, 1 sem revisão há mais de 12 meses |
+| Inventário | 9 itens (4 lugares com informações de visita de exemplo: Santo Cruzeiro, Inatel, Campão de Eventos e Bloco do Urso), 1 sem revisão há mais de 12 meses |
 
 > Os passos assumem que você está testando em **outubro/2026 ou depois**. Outubro/2026 ainda não tem dados lançados.
 
