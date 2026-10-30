@@ -93,7 +93,7 @@ O link "Ver envios" do painel já aponta para cá.
 ```
 
 Para abas com contadores (Pendentes / Aprovados / Rejeitados): `GET /api/submissoes/contagem` 🔒 →
-`{ "PENDENTE": 3, "APROVADA": 0, "REJEITADA": 1 }`.
+`{ "PENDENTE": 2, "APROVADA": 1, "REJEITADA": 1 }`.
 
 ### Aprovar 🔒
 

@@ -35,7 +35,8 @@ C317/
 │   ├── mockups/         # protótipos do Figma, por tela
 │   ├── banco-de-dados.md   # diagrama e descrição das tabelas
 │   ├── guia-api-front.md   # rotas usadas por cada tela, com exemplos
-│   └── deploy.md           # como publicar (Docker, variáveis, migrations, PDFs)
+│   ├── deploy.md           # como publicar (Docker, variáveis, migrations, PDFs)
+│   └── roteiro-de-testes.md # passo a passo para testar tudo pelas telas
 ├── docker-compose.yml   # MySQL (e, opcionalmente, a API) com Docker
 └── .gitattributes       # mantém os scripts .sh com final de linha Unix
 ```
@@ -82,10 +83,12 @@ npm run dev                   # site em http://localhost:3000
 |---|---|
 | Site público | http://localhost:3000 |
 | Painel administrativo | http://localhost:3000/login, com `admin@observatorio.local` / `admin123` |
+| Usuário EDITOR (sem permissão de excluir) | `editor@observatorio.local` / `editor123` |
 | API (teste rápido) | http://localhost:3333/api/health → `{"status":"online"}` |
 | Códigos de teste da coleta | `CENT-2026` (hotel) e `SERR-2026` (pousada) |
 
 Todos os dados do seed são **fictícios**, apenas para desenvolvimento e demonstração.
+Para testar o sistema inteiro pelas telas com esses dados, siga o `docs/roteiro-de-testes.md`.
 
 ### Alternativa: API também em container
 

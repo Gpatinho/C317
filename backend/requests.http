@@ -76,6 +76,42 @@ Content-Type: application/json
 ### Estabelecimentos (temCodigo = já tem código de acesso da coleta)
 GET {{api}}/estabelecimentos
 
-### Envios dos estabelecimentos aguardando análise
+### Próximos eventos (o que o dashboard usa)
+GET {{api}}/eventos?futuros=true&limite=4
+
+### ---- Coleta pelos estabelecimentos ----
+
+### Estabelecimento entra com o código de teste do seed
+POST {{api}}/coleta/acesso
+Content-Type: application/json
+
+{ "codigo": "CENT-2026" }
+
+### Estabelecimento reenvia a taxa de ocupação de setembro que foi rejeitada
+# indicadorId: confira na resposta do /coleta/acesso (num banco recém-criado, 3 = Taxa de ocupação)
+POST {{api}}/coleta/envios
+Content-Type: application/json
+
+{ "codigo": "CENT-2026", "indicadorId": 3, "valor": 86, "periodo": "2026-09" }
+
+### ---- Análise dos envios pela SMCELT ----
+
+### Quantos envios em cada status
+GET {{api}}/submissoes/contagem
+Authorization: Bearer {{token}}
+
+### Fila de envios pendentes (copie o "id" de um deles)
+# @name pendentes
 GET {{api}}/submissoes?status=PENDENTE
 Authorization: Bearer {{token}}
+
+### Aprovar o primeiro envio pendente (o valor passa a contar no dashboard)
+POST {{api}}/submissoes/{{pendentes.response.body.$[0].id}}/aprovar
+Authorization: Bearer {{token}}
+
+### Rejeitar o primeiro envio pendente
+POST {{api}}/submissoes/{{pendentes.response.body.$[0].id}}/rejeitar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "motivo": "Valor muito diferente dos meses anteriores. Confira e envie de novo." }
