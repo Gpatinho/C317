@@ -6,7 +6,7 @@ import { HttpError } from "../lib/http-error.js";
 import { prisma } from "../lib/prisma.js";
 import { autenticar } from "../middlewares/auth.js";
 import { limiteLogin } from "../middlewares/rate-limit.js";
-import { loginSchema } from "../schemas/index.js";
+import { loginSchema, trocarSenhaSchema } from "../schemas/index.js";
 
 export const authRoutes = Router();
 
@@ -40,4 +40,23 @@ authRoutes.get("/me", autenticar, async (req, res) => {
   });
   if (!usuario) throw new HttpError(404, "Usuário não encontrado.");
   res.json(usuario);
+});
+
+// PUT /api/auth/senha  { senhaAtual, novaSenha }  -> 204
+// O usuário logado troca a própria senha. Quem esqueceu a senha pede a um ADMIN,
+// que define uma nova pela rota PUT /api/usuarios/:id.
+// Usa o mesmo limite do login: impede ficar testando a senha atual em sequência.
+authRoutes.put("/senha", limiteLogin, autenticar, async (req, res) => {
+  const { senhaAtual, novaSenha } = trocarSenhaSchema.parse(req.body);
+
+  const usuario = await prisma.usuario.findUnique({ where: { id: req.usuario!.id } });
+  if (!usuario || !(await bcrypt.compare(senhaAtual, usuario.senhaHash))) {
+    throw new HttpError(400, "A senha atual está incorreta.");
+  }
+
+  await prisma.usuario.update({
+    where: { id: usuario.id },
+    data: { senhaHash: await bcrypt.hash(novaSenha, 10) },
+  });
+  res.status(204).end();
 });
