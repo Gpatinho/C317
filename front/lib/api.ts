@@ -38,6 +38,18 @@ export type Resumo = {
   cards: CardResumo[];
 };
 
+export type Evento = {
+  id: number;
+  nome: string;
+  dataInicio: string; // "2027-07-12T00:00:00.000Z" (use .slice(0, 10))
+  dataFim: string | null; // null = evento de um dia só
+  local: string;
+  contato: string | null;
+  gratuito: boolean;
+  icone: string | null;
+  descricao: string | null;
+};
+
 export type Usuario = {
   id: number;
   nome: string;
@@ -157,6 +169,9 @@ export const api = {
   me: () => request<Usuario>("/auth/me"),
 
   categorias: () => request<string[]>("/indicadores/categorias"),
+  // futuros: só eventos que ainda não terminaram, do mais próximo ao mais distante
+  eventos: (f: { futuros?: boolean; limite?: number } = {}) =>
+    request<Evento[]>(`/eventos${qs({ futuros: f.futuros ? "true" : undefined, limite: f.limite })}`),
   indicadores: (categoria?: string) => request<Indicador[]>(`/indicadores${qs({ categoria })}`),
 
   // inicio/fim no formato "2026-01"
