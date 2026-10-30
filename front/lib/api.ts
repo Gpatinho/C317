@@ -88,7 +88,16 @@ export type Registro = {
   usuario: { id: number; nome: string };
 };
 
-export type Estabelecimento = { id: number; nome: string; categoria: string };
+export type Estabelecimento = {
+  id: number;
+  nome: string;
+  categoria: string;
+  endereco?: string | null;
+  regiao?: string | null;
+  temCodigo?: boolean; // já tem código de acesso para a coleta
+};
+
+export type DadosEstabelecimento = { nome: string; categoria: string; endereco?: string | null; regiao?: string | null };
 
 // Corpo de POST/PUT /api/registros. estabelecimentoId null = valor do município.
 export type DadosRegistro = {
@@ -98,7 +107,23 @@ export type DadosRegistro = {
   estabelecimentoId?: number | null;
 };
 
-export type ContagemSubmissoes = { PENDENTE: number; APROVADA: number; REJEITADA: number };
+export type StatusSubmissao = "PENDENTE" | "APROVADA" | "REJEITADA";
+export type ContagemSubmissoes = Record<StatusSubmissao, number>;
+
+// Valor enviado por um estabelecimento pelo formulário de coleta, aguardando (ou já com) análise da SMCELT
+export type Submissao = {
+  id: number;
+  valor: number;
+  periodo: string; // "2026-09"
+  observacao: string | null;
+  status: StatusSubmissao;
+  motivoRejeicao: string | null;
+  enviadoEm: string;
+  analisadoEm: string | null;
+  estabelecimento: { id: number; nome: string; categoria: string };
+  indicador: { id: number; nome: string; unidade: string };
+  analisadoPor: { id: number; nome: string } | null;
+};
 
 // Erro da API com o código HTTP. status 401 = sessão expirada/inválida;
 // status 0 = não conseguiu falar com o servidor.
@@ -206,9 +231,23 @@ export const api = {
     request<Registro>(`/registros/${id}`, { method: "PUT", body: JSON.stringify(dados) }),
   excluirRegistro: (id: number) => request<void>(`/registros/${id}`, { method: "DELETE" }),
   estabelecimentos: () => request<Estabelecimento[]>("/estabelecimentos"),
+  criarEstabelecimento: (dados: DadosEstabelecimento) =>
+    request<Estabelecimento>("/estabelecimentos", { method: "POST", body: JSON.stringify(dados) }),
+  editarEstabelecimento: (id: number, dados: DadosEstabelecimento) =>
+    request<Estabelecimento>(`/estabelecimentos/${id}`, { method: "PUT", body: JSON.stringify(dados) }),
+  excluirEstabelecimento: (id: number) => request<void>(`/estabelecimentos/${id}`, { method: "DELETE" }),
+  // Gera um novo código de acesso (invalida o anterior). O código só vem nesta resposta.
+  gerarCodigo: (id: number) =>
+    request<{ estabelecimento: { id: number; nome: string }; codigo: string }>(`/estabelecimentos/${id}/codigo`, {
+      method: "POST",
+    }),
 
   registros: () => request<Registro[]>("/registros"),
   contagemSubmissoes: () => request<ContagemSubmissoes>("/submissoes/contagem"),
+  submissoes: (status?: StatusSubmissao) => request<Submissao[]>(`/submissoes${qs({ status })}`),
+  aprovarSubmissao: (id: number) => request<Submissao>(`/submissoes/${id}/aprovar`, { method: "POST" }),
+  rejeitarSubmissao: (id: number, motivo: string) =>
+    request<Submissao>(`/submissoes/${id}/rejeitar`, { method: "POST", body: JSON.stringify({ motivo }) }),
   atrativos: (f: { busca?: string; tipo?: TipoAtrativo; categoria?: string } = {}) =>
     request<Atrativo[]>(`/atrativos${qs(f)}`),
   atrativo: (id: number) => request<Atrativo>(`/atrativos/${id}`),

@@ -7,7 +7,9 @@ import { ApiError, api, type Usuario } from "@/lib/api";
 import { SessaoContext } from "./_componentes/sessao";
 import {
   IconeBarras,
+  IconeCaixa,
   IconeCasa,
+  IconeDocumento,
   IconeExterno,
   IconeFechar,
   IconeMenu,
@@ -20,6 +22,8 @@ const MENU = [
   { href: "/admin", titulo: "Visão geral", mobile: "Painel administrativo", icone: <IconeCasa /> },
   { href: "/admin/lancar", titulo: "Lançar valores", mobile: "Lançar valores", icone: <IconeBarras /> },
   { href: "/admin/publicar", titulo: "Publicar relatório", mobile: "Publicar relatório", icone: <IconeUpload /> },
+  { href: "/admin/envios", titulo: "Envios", mobile: "Envios", icone: <IconeCaixa /> },
+  { href: "/admin/estabelecimentos", titulo: "Estabelecimentos", mobile: "Estabelecimentos", icone: <IconeDocumento /> },
 ];
 
 // Layout de todas as telas do /admin: confere o login, mostra o menu lateral

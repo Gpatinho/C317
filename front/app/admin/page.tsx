@@ -16,7 +16,7 @@ import {
 } from "./_componentes/icones";
 import { useSessao } from "./_componentes/sessao";
 
-// Telas do painel. "envios" ainda será criada; quando existir, é só ajustar aqui.
+// Telas do painel
 const ROTAS = {
   lancar: "/admin/lancar",
   publicar: "/admin/publicar",
