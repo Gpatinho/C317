@@ -141,6 +141,13 @@ model Atrativo {
   descricao  String?      @db.Text
   endereco   String?      @db.VarChar(255)
   contato    String?      @db.VarChar(120)
+
+  // Informações para o visitante (preenchidas pela SMCELT)
+  horarioFuncionamento String? @map("horario_funcionamento") @db.VarChar(255) // ex.: "Seg a sex, 8h às 18h"
+  melhorHorario        String? @map("melhor_horario") @db.VarChar(255) // melhor horário para visitar
+  periodoMovimentado   String? @map("periodo_movimentado") @db.VarChar(255) // época do ano mais frequentada
+  instagram            String? @db.VarChar(60) // só o usuário, sem @ (ex.: inatel)
+
   revisadoEm DateTime     @default(now()) @map("revisado_em") // última vez que alguém conferiu os dados
 
   @@index([tipo, categoria])

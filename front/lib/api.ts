@@ -50,6 +50,24 @@ export type Evento = {
   descricao: string | null;
 };
 
+export type TipoAtrativo = "ATRATIVO" | "EQUIPAMENTO" | "SERVICO";
+
+// Item do inventário turístico (lugar que o visitante pode conhecer)
+export type Atrativo = {
+  id: number;
+  nome: string;
+  tipo: TipoAtrativo;
+  categoria: string;
+  descricao: string | null;
+  endereco: string | null;
+  contato: string | null;
+  horarioFuncionamento: string | null;
+  melhorHorario: string | null; // melhor horário para visitar
+  periodoMovimentado: string | null; // época do ano mais frequentada
+  instagram: string | null; // só o nome do perfil, sem @
+  revisadoEm: string;
+};
+
 export type Usuario = {
   id: number;
   nome: string;
@@ -191,6 +209,9 @@ export const api = {
 
   registros: () => request<Registro[]>("/registros"),
   contagemSubmissoes: () => request<ContagemSubmissoes>("/submissoes/contagem"),
+  atrativos: (f: { busca?: string; tipo?: TipoAtrativo; categoria?: string } = {}) =>
+    request<Atrativo[]>(`/atrativos${qs(f)}`),
+  atrativo: (id: number) => request<Atrativo>(`/atrativos/${id}`),
   revisaoPendente: () => request<{ meses: number; total: number }>("/atrativos/revisao-pendente"),
 
   relatorios: () => request<Relatorio[]>("/relatorios"),

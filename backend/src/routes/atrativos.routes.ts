@@ -2,7 +2,7 @@ import { Router } from "express";
 import { HttpError } from "../lib/http-error.js";
 import { prisma } from "../lib/prisma.js";
 import { autenticar, exigirPapel } from "../middlewares/auth.js";
-import { atrativoSchema, idParam } from "../schemas/index.js";
+import { atrativoSchema, buscaAtrativoSchema, idParam } from "../schemas/index.js";
 
 export const atrativosRoutes = Router();
 
@@ -10,10 +10,18 @@ export const atrativosRoutes = Router();
 const REVISAO_MESES = 12;
 
 
+// ?busca=cruzeiro procura no nome, na categoria e no endereço (sem diferenciar
+// maiúsculas nem acentos, pela collation do MySQL). Filtros tipo e categoria opcionais.
 atrativosRoutes.get("/", async (req, res) => {
-  const filtro = atrativoSchema.pick({ tipo: true, categoria: true }).partial().parse(req.query);
+  const { busca, tipo, categoria } = buscaAtrativoSchema.parse(req.query);
   const atrativos = await prisma.atrativo.findMany({
-    where: filtro,
+    where: {
+      tipo,
+      categoria,
+      ...(busca && {
+        OR: [{ nome: { contains: busca } }, { categoria: { contains: busca } }, { endereco: { contains: busca } }],
+      }),
+    },
     orderBy: [{ tipo: "asc" }, { categoria: "asc" }, { nome: "asc" }],
   });
   res.json(atrativos);

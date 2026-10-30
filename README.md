@@ -12,7 +12,7 @@ Lazer e Turismo).
 
 | Lado | Telas |
 |---|---|
-| **Público** | Home, dashboard de indicadores (filtros por período e setor), relatórios para download |
+| **Público** | Home, dashboard de indicadores (filtros por período e setor) com busca de lugares, página de cada lugar (horários, melhor época, Instagram), relatórios para download |
 | **Painel administrativo** (`/admin`, com login) | Visão geral, lançar valores mensais, publicar relatórios |
 | **Estabelecimentos** | Hotéis e pousadas enviam os próprios dados com um código de acesso; a SMCELT aprova antes de publicar |
 

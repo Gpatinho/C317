@@ -128,4 +128,37 @@ describe("inventário turístico (/api/atrativos)", () => {
     expect((await request(app).delete(`/api/atrativos/${a.id}`).set(editor.auth)).status).toBe(403);
     expect((await request(app).delete(`/api/atrativos/${a.id}`).set(admin.auth)).status).toBe(204);
   });
+
+  it("busca por parte do nome, sem diferenciar maiúsculas nem acentos", async () => {
+    const cruzeiro = await atrativo("Santo Cruzeiro", "ATRATIVO");
+    const campao = await atrativo("Campão de Eventos", "ATRATIVO");
+    await atrativo("Igreja Matriz", "ATRATIVO");
+
+    const ids = async (busca: string) =>
+      (await request(app).get(`/api/atrativos?busca=${encodeURIComponent(busca)}`)).body.map((a: { id: number }) => a.id);
+    expect(await ids("cruzeiro")).toEqual([cruzeiro.id]);
+    expect(await ids("CRUZ")).toEqual([cruzeiro.id]);
+    expect(await ids("campao")).toEqual([campao.id]);
+    expect(await ids("praia")).toEqual([]);
+    expect((await request(app).get("/api/atrativos?busca=a")).status).toBe(400);
+  });
+
+  it("guarda as informações para o visitante e deixa só o usuário do Instagram", async () => {
+    const admin = await criarUsuario("ADMIN");
+    const criado = await request(app).post("/api/atrativos").set(admin.auth).send({
+      nome: "Inatel", tipo: "ATRATIVO", categoria: "Tecnologia e educação",
+      horarioFuncionamento: "Seg a sex, 8h às 22h", melhorHorario: "Manhã",
+      periodoMovimentado: "Semestre letivo", instagram: "https://www.instagram.com/inatel/",
+    });
+    expect(criado.status).toBe(201);
+    expect(criado.body.instagram).toBe("inatel");
+
+    const lido = await request(app).get(`/api/atrativos/${criado.body.id}`);
+    expect(lido.body).toMatchObject({ horarioFuncionamento: "Seg a sex, 8h às 22h", melhorHorario: "Manhã", periodoMovimentado: "Semestre letivo" });
+
+    const editar = (instagram: string) => request(app).put(`/api/atrativos/${criado.body.id}`).set(admin.auth).send({ instagram });
+    expect((await editar("@inatel.oficial")).body.instagram).toBe("inatel.oficial");
+    expect((await editar("")).body.instagram).toBeNull();
+    expect((await editar("perfil inválido!")).status).toBe(400);
+  });
 });

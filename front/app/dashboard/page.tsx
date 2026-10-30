@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { api, type CardResumo, type Evento, type Indicador, type Resumo } from "@/lib/api";
+import BuscaLugares from "./BuscaLugares";
 
 // Filtro por setor: os setores vêm da API (GET /api/indicadores/categorias).
 // "" = visão geral (todos os setores).
@@ -199,6 +200,7 @@ export default function Dashboard() {
             Consulte indicadores turísticos, tendências e eventos de Santa
             Rita do Sapucaí em um só lugar.
           </p>
+          <BuscaLugares />
         </div>
       </header>
 

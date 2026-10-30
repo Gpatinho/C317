@@ -323,6 +323,41 @@ async function main() {
     });
     console.log("✔ Inventário turístico de exemplo");
   }
+
+  // Lugares com as informações para o visitante (busca do dashboard e página do lugar).
+  // Horários e períodos são EXEMPLOS para a demonstração: a SMCELT confere e corrige.
+  const AVISO = " Informações de visita de exemplo, a confirmar pela SMCELT.";
+  const lugaresComInfo = [
+    { nome: "Santo Cruzeiro", tipo: "ATRATIVO" as const, categoria: "Mirante",
+      descricao: "Cruzeiro no alto do morro, com vista panorâmica da cidade." + AVISO,
+      horarioFuncionamento: "Todos os dias (área ao ar livre)",
+      melhorHorario: "Fim da tarde, para ver o pôr do sol",
+      periodoMovimentado: "Fins de semana, feriados e Semana Santa" },
+    { nome: "Inatel – Instituto Nacional de Telecomunicações", tipo: "ATRATIVO" as const, categoria: "Tecnologia e educação",
+      descricao: "Instituição de ensino e pesquisa em engenharia e tecnologia, referência no Vale da Eletrônica." + AVISO,
+      endereco: "Av. João de Camargo, 510 – Centro",
+      horarioFuncionamento: "Segunda a sexta, 8h às 22h; visitas ao campus com agendamento",
+      melhorHorario: "Dias úteis pela manhã, com visita agendada",
+      periodoMovimentado: "Semestre letivo (março a junho e agosto a novembro) e semana da Fetin",
+      instagram: "inatel" },
+    { nome: "Campão de Eventos", tipo: "ATRATIVO" as const, categoria: "Espaço de eventos",
+      descricao: "Espaço aberto que recebe shows, festas e eventos da cidade." + AVISO,
+      horarioFuncionamento: "Aberto em dias de evento",
+      melhorHorario: "Noites de evento, chegando cedo para evitar filas",
+      periodoMovimentado: "Carnaval, festas juninas e festas da cidade" },
+    { nome: "Concentração do Bloco do Urso", tipo: "ATRATIVO" as const, categoria: "Carnaval",
+      descricao: "Ponto de concentração do Bloco do Urso no carnaval de Santa Rita do Sapucaí." + AVISO,
+      horarioFuncionamento: "Durante o carnaval, no dia e horário divulgados pela organização do bloco",
+      melhorHorario: "Início da concentração, no começo da tarde",
+      periodoMovimentado: "Carnaval (fevereiro ou março)" },
+  ];
+  let novosLugares = 0;
+  for (const l of lugaresComInfo) {
+    if (await prisma.atrativo.findFirst({ where: { nome: l.nome } })) continue;
+    await prisma.atrativo.create({ data: l });
+    novosLugares++;
+  }
+  if (novosLugares) console.log(`✔ Inventário: +${novosLugares} lugares com informações para o visitante`);
 }
 
 main()
