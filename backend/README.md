@@ -34,6 +34,19 @@ Login de teste: `admin@observatorio.local` / `admin123` (mude no `.env` antes do
 > **Depois de um `git pull` que mexeu no `schema.prisma`**, rode `npx prisma migrate dev` e em seguida `npx prisma generate`.
 > No Prisma 7 o `migrate dev` **não** regera o client sozinho: sem o `generate`, o TypeScript acusa que tabelas e campos novos "não existem".
 
+### Produção e Docker
+
+```bash
+npm run build        # compila o TypeScript de src/ para dist/
+npm run start:prod   # roda o JavaScript compilado (node dist/server.js)
+```
+
+- `Dockerfile` gera a imagem da API; ao iniciar, o container aplica as migrations
+  (`prisma migrate deploy`) e sobe a API (`docker-entrypoint.sh`).
+- Com `NODE_ENV=production`, a API recusa subir com um `JWT_SECRET` de menos de 32 caracteres.
+- `UPLOADS_DIR` define a pasta dos PDFs (em produção, um volume persistente).
+- Passo a passo de deploy, variáveis e cuidados com migrations: `docs/deploy.md` na raiz.
+
 Para testar as rotas sem o front, use o arquivo `requests.http` com a extensão **REST Client** do VS Code.
 Para ver/editar o banco visualmente: `npm run db:studio`.
 
@@ -132,8 +145,8 @@ Códigos de teste criados pelo seed: CENT-2026 (hotel) e SERR-2026 (pousada).
 - *Limite de tentativas* (express-rate-limit): 10 erros de login ou 20 erros na coleta a cada 15 minutos, por IP. Os acertos não contam. A API confia no 1º proxy (trust proxy) para descobrir o IP real no Codespaces e no Render.
 - *Todo DELETE é só ADMIN*, e a gestão de usuários também.
 
-## Deploy (Render/Railway)
+## Deploy
 
-- Configure as mesmas variáveis do .env no painel do serviço.
-- Build: npm install && npx prisma generate && npx prisma migrate deploy; start: npm start.
-- Atenção: no plano gratuito do Render o disco é apagado a cada deploy, então os PDFs de uploads/ somem. Para a apresentação final, vale usar um disco persistente ou um storage externo.
+A API é publicada como container Docker (`Dockerfile` desta pasta): as migrations rodam
+sozinhas ao iniciar e os PDFs ficam num volume persistente (`UPLOADS_DIR`).
+Passo a passo completo, variáveis de ambiente e cuidados com migrations: **`docs/deploy.md`** na raiz.

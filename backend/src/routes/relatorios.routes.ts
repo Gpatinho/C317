@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { Router } from "express";
 import multer from "multer";
+import { env } from "../lib/env.js";
 import { HttpError } from "../lib/http-error.js";
 import { prisma } from "../lib/prisma.js";
 import { autenticar, exigirPapel } from "../middlewares/auth.js";
@@ -10,7 +11,7 @@ import { idParam, relatorioSchema } from "../schemas/index.js";
 
 export const relatoriosRoutes = Router();
 
-export const PASTA_UPLOADS = path.resolve("uploads");
+export const PASTA_UPLOADS = path.resolve(env.UPLOADS_DIR);
 const LIMITE_MB = 20;
 
 const upload = multer({

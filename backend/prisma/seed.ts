@@ -177,7 +177,7 @@ async function main() {
 
   // ---- Relatórios de exemplo (PDFs gerados aqui mesmo, em uploads/) ----
   if ((await prisma.relatorio.count()) === 0) {
-    const pasta = path.resolve("uploads");
+    const pasta = path.resolve(process.env.UPLOADS_DIR ?? "uploads"); // a mesma pasta da API
     await fs.mkdir(pasta, { recursive: true });
     const exemplos = [
       { titulo: "Boletim do Turismo - 2º trimestre 2026", ano: 2026, publicadoEm: "2026-07-15",
