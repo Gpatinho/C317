@@ -14,6 +14,17 @@ export const loginSchema = z.object({
   senha: z.string().min(1, "Informe a senha"),
 });
 
+// PUT /api/auth/senha: o usuário logado troca a própria senha
+export const trocarSenhaSchema = z
+  .object({
+    senhaAtual: z.string().min(1, "Informe a senha atual"),
+    novaSenha: z.string().min(6, "A nova senha precisa ter pelo menos 6 caracteres"),
+  })
+  .refine((d) => d.senhaAtual !== d.novaSenha, {
+    message: "A nova senha precisa ser diferente da atual",
+    path: ["novaSenha"],
+  });
+
 // IMPORTANTE: schemas com .default() têm duas versões.
 // - xSchema (criar): aplica os valores padrão nos campos não enviados.
 // - xUpdateSchema (editar): SEM padrões. Se usássemos xSchema.partial(), o Zod

@@ -7,21 +7,33 @@ import { estabelecimentoSchema, idParam } from "../schemas/index.js";
 
 export const estabelecimentosRoutes = Router();
 
+// O hash do código de acesso nunca sai da API. No lugar dele, a resposta diz só
+// se o estabelecimento já tem um código (temCodigo), para a tela do painel saber
+// se mostra "Gerar código" ou "Gerar novo código".
+function comTemCodigo<T extends { codigoAcessoHash: string | null }>(e: T) {
+  const { codigoAcessoHash, ...resto } = e;
+  return { ...resto, temCodigo: codigoAcessoHash !== null };
+}
+
 // GET /api/estabelecimentos?categoria=Hotel
 estabelecimentosRoutes.get("/", async (req, res) => {
   const categoria = typeof req.query.categoria === "string" ? req.query.categoria : undefined;
   const estabelecimentos = await prisma.estabelecimento.findMany({
     where: { categoria },
     orderBy: { nome: "asc" },
+    omit: { codigoAcessoHash: false }, // lê o hash só para calcular temCodigo
   });
-  res.json(estabelecimentos);
+  res.json(estabelecimentos.map(comTemCodigo));
 });
 
 estabelecimentosRoutes.get("/:id", async (req, res) => {
   const { id } = idParam.parse(req.params);
-  const estabelecimento = await prisma.estabelecimento.findUnique({ where: { id } });
+  const estabelecimento = await prisma.estabelecimento.findUnique({
+    where: { id },
+    omit: { codigoAcessoHash: false },
+  });
   if (!estabelecimento) throw new HttpError(404, "Estabelecimento não encontrado.");
-  res.json(estabelecimento);
+  res.json(comTemCodigo(estabelecimento));
 });
 
 estabelecimentosRoutes.post("/", autenticar, async (req, res) => {
