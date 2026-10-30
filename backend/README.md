@@ -5,7 +5,7 @@ API REST do projeto C317 (Inatel · HEIComp 2026.2). Stack definida no Milestone
 
 ## Como rodar (primeira vez)
 
-Pré-requisitos: Node 22+ e MySQL 8 rodando (porta 3306).
+Pré-requisitos: Node 22+ e MySQL 8 rodando (porta 3306). Sem MySQL instalado, suba o banco com Docker: veja o README da raiz.
 
 ```bash
 cd backend

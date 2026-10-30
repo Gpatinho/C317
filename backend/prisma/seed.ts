@@ -197,7 +197,7 @@ async function main() {
           descricao: r.descricao,
           ano: r.ano,
           arquivoNome: `${r.titulo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`,
-                    arquivoPath,
+          arquivoPath,
           tamanhoBytes: pdf.length,
           publicadoEm: new Date(r.publicadoEm),
           usuarioId: admin.id,

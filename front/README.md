@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Front-end — Observatório do Turismo de Santa Rita do Sapucaí
 
-## Getting Started
+Site público e painel administrativo do projeto, em **Next.js 16 (App Router) + React 19 +
+Tailwind CSS 4**, escrito em TypeScript. Os dados vêm da API do `backend/`.
 
-First, run the development server:
+## Como rodar
+
+Pré-requisitos: Node.js 22 LTS e a API rodando (veja o README da raiz).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd front
+cp .env.example .env.local    # no PowerShell: Copy-Item .env.example .env.local
+npm install
+npm run dev                   # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+O `.env.local` define onde está a API:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+NEXT_PUBLIC_API_URL=http://localhost:3333/api
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+No GitHub Codespaces, use a URL da porta 3333 do Codespace (com a porta marcada como **Public**).
+Depois de mudar o `.env.local`, pare e rode `npm run dev` de novo.
 
-## Learn More
+## Telas
 
-To learn more about Next.js, take a look at the following resources:
+| Rota | Tela |
+|---|---|
+| `/` | Home |
+| `/dashboard` | Indicadores em cards e gráfico, com filtros |
+| `/relatorios` | Relatórios públicos para download |
+| `/login` | Acesso da equipe da SMCELT |
+| `/admin` | Visão geral do painel |
+| `/admin/lancar` | Lançar, editar e excluir valores mensais |
+| `/admin/publicar` | Publicar, editar e excluir relatórios em PDF |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Organização do código
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+front/
+├── app/                      # uma pasta por rota (App Router)
+│   ├── admin/
+│   │   ├── layout.tsx        # menu lateral + verificação de login de todo o /admin
+│   │   ├── _componentes/     # sessão, formatação, ícones e modal do painel (não são rotas)
+│   │   ├── lancar/
+│   │   └── publicar/
+│   ├── dashboard/  relatorios/  login/
+│   └── page.tsx              # Home
+└── lib/api.ts                # todas as chamadas à API (tipos + funções)
+```
 
-## Deploy on Vercel
+- **Toda chamada à API passa por `lib/api.ts`.** Uma tela nova acrescenta ali a função da rota que usa.
+- **Erros da API** chegam como `ApiError`, com o `status` HTTP. Um `401` no painel chama `sessaoExpirou()`,
+  que leva ao login com o aviso de sessão expirada.
+- **Telas do painel** ficam dentro de `app/admin/` e já recebem o menu e o usuário logado pelo
+  `layout.tsx` (use `useSessao()`).
+- As rotas que cada tela pendente vai usar estão em `docs/guia-api-front.md`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Antes de abrir um pull request
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npx tsc --noEmit
+npx eslint app lib
+```
+
+Os dois não devem mostrar nada.
