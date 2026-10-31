@@ -31,6 +31,7 @@ Depois de mudar o `.env.local`, pare e rode `npm run dev` de novo.
 | `/dashboard` | Indicadores em cards e gráfico, com filtros, e busca de lugares para conhecer |
 | `/relatorios` | Relatórios públicos para download |
 | `/lugares/[id]` | Página de um lugar do inventário: horários, melhor horário, época mais movimentada e Instagram (aberta pela busca do dashboard) |
+| `/cadastur` | O que são o Cadastur e a FNRH Digital, quem precisa se cadastrar e onde fazer |
 | `/login` | Acesso da equipe da SMCELT |
 | `/admin` | Visão geral do painel |
 | `/admin/lancar` | Lançar, editar e excluir valores mensais |
