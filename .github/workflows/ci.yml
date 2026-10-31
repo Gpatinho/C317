@@ -1,0 +1,138 @@
+name: CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test-backend:
+    name: Teste · Back-end
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: observatorio_test
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/observatorio
+      JWT_SECRET: segredo-so-para-o-ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Tipos (TypeScript)
+        run: npm run typecheck
+      - name: Testes unitários e de integração
+        run: npm test
+
+  test-front:
+    name: Teste · Front-end
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: front
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+
+  build-api:
+    name: Build · API (Docker)
+    needs: test-backend
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: observatorio
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build da imagem
+        run: docker build -t observatorio-api ./backend
+      - name: Sobe a imagem como em produção e confere /api/health
+        run: |
+          docker run -d --name api --network host \
+            -e DATABASE_URL=mysql://root:root@127.0.0.1:3306/observatorio \
+            -e JWT_SECRET=segredo-do-ci-com-mais-de-32-caracteres \
+            -e FRONTEND_URL=http://localhost:3000 \
+            observatorio-api
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:3333/api/health; then echo; exit 0; fi
+            sleep 2
+          done
+          echo "A API não respondeu em 60 s. Logs do container:"
+          docker logs api
+          exit 1
+
+  build-front:
+    name: Build · Front-end
+    needs: test-front
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: front
+    env:
+      NEXT_PUBLIC_API_URL: https://api.exemplo.invalid/api
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+      - run: npm ci
+      - name: Build
+        run: npm run build
+
+  deploy:
+    name: Deploy
+    needs: [build-api, build-front]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE }}
+      VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy da API (Railway)
+        if: env.RAILWAY_TOKEN != ''
+        working-directory: backend
+        run: npx -y @railway/cli up --service "$RAILWAY_SERVICE" --ci
+      - name: Deploy do front-end (Vercel)
+        if: env.VERCEL_DEPLOY_HOOK != ''
+        run: curl -fsS -X POST "$VERCEL_DEPLOY_HOOK"
+      - name: Aviso
+        if: env.RAILWAY_TOKEN == '' || env.VERCEL_DEPLOY_HOOK == ''
+        run: |
+          echo "::notice::Deploy pulado em parte. Configure RAILWAY_TOKEN, RAILWAY_SERVICE e VERCEL_DEPLOY_HOOK no GitHub (veja docs/deploy.md)."
