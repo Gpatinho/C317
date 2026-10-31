@@ -68,12 +68,23 @@ export type Atrativo = {
   revisadoEm: string;
 };
 
+// Corpo de POST/PUT /api/atrativos. Campos opcionais vazios vão como null (apaga o valor).
+export type DadosAtrativo = Omit<Atrativo, "id" | "revisadoEm">;
+
+export type Papel = "ADMIN" | "EDITOR";
+
 export type Usuario = {
   id: number;
   nome: string;
   email: string;
-  papel: "ADMIN" | "EDITOR";
+  papel: Papel;
 };
+
+// Item da lista de usuários do painel (a senha nunca vem da API)
+export type UsuarioEquipe = Usuario & { criadoEm: string };
+
+// POST /api/usuarios exige senha; no PUT ela é opcional (só quando for redefinir)
+export type DadosUsuario = { nome: string; email: string; papel: Papel; senha?: string };
 
 export type Registro = {
   id: number;
@@ -251,7 +262,24 @@ export const api = {
   atrativos: (f: { busca?: string; tipo?: TipoAtrativo; categoria?: string } = {}) =>
     request<Atrativo[]>(`/atrativos${qs(f)}`),
   atrativo: (id: number) => request<Atrativo>(`/atrativos/${id}`),
-  revisaoPendente: () => request<{ meses: number; total: number }>("/atrativos/revisao-pendente"),
+  // Itens sem conferência há mais de "meses" meses, dos mais atrasados para os mais recentes
+  revisaoPendente: () =>
+    request<{ meses: number; total: number; atrativos: Atrativo[] }>("/atrativos/revisao-pendente"),
+  criarAtrativo: (dados: DadosAtrativo) =>
+    request<Atrativo>("/atrativos", { method: "POST", body: JSON.stringify(dados) }),
+  // Editar também conta como revisão: a API atualiza o revisadoEm
+  editarAtrativo: (id: number, dados: Partial<DadosAtrativo>) =>
+    request<Atrativo>(`/atrativos/${id}`, { method: "PUT", body: JSON.stringify(dados) }),
+  revisarAtrativo: (id: number) => request<Atrativo>(`/atrativos/${id}/revisar`, { method: "POST" }),
+  excluirAtrativo: (id: number) => request<void>(`/atrativos/${id}`, { method: "DELETE" }),
+
+  // Gestão da equipe (só ADMIN)
+  usuarios: () => request<UsuarioEquipe[]>("/usuarios"),
+  criarUsuario: (dados: DadosUsuario) =>
+    request<UsuarioEquipe>("/usuarios", { method: "POST", body: JSON.stringify(dados) }),
+  editarUsuario: (id: number, dados: Partial<DadosUsuario>) =>
+    request<UsuarioEquipe>(`/usuarios/${id}`, { method: "PUT", body: JSON.stringify(dados) }),
+  excluirUsuario: (id: number) => request<void>(`/usuarios/${id}`, { method: "DELETE" }),
 
   relatorios: () => request<Relatorio[]>("/relatorios"),
   urlDownload: (id: number) => `${API_URL}/relatorios/${id}/download`,
