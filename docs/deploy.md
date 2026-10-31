@@ -92,13 +92,17 @@ Na raiz do projeto, com o Docker Desktop aberto:
 
 ```bash
 docker compose --profile completo up -d --build
-docker compose --profile completo ps  # mysql e api "healthy"
+docker compose --profile completo ps  # mysql, api e front de pé
 curl http://localhost:3333/api/health
 ```
 
-Isso sobe o MySQL e a **API em container**, exatamente como em produção (migrations automáticas,
-seed de exemplo, PDFs num volume). Para desligar: `docker compose --profile completo down`.
-O front continua rodando com `npm run dev` na pasta `front`.
+Isso sobe o MySQL, a **API em container**, exatamente como em produção (migrations automáticas,
+seed de exemplo, PDFs num volume), e o **site** em http://localhost:3000, a partir do
+`front/Dockerfile` (build de produção do Next.js no modo `standalone`). Para desligar:
+`docker compose --profile completo down`.
+
+O endereço da API que o site usa entra no build (`NEXT_PUBLIC_API_URL`, definido no
+`docker-compose.yml`). Na Vercel continua valendo a variável configurada no painel dela.
 
 ## CI/CD
 

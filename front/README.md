@@ -14,6 +14,10 @@ npm install
 npm run dev                   # http://localhost:3000
 ```
 
+Para só ver o site funcionando, sem instalar nada além do Docker, use o comando único do README
+da raiz (`docker compose --profile completo up -d --build`): ele monta este front pelo
+`front/Dockerfile`.
+
 O `.env.local` define onde está a API:
 
 ```

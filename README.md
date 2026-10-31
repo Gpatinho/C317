@@ -37,11 +37,37 @@ C317/
 │   ├── guia-api-front.md   # rotas usadas por cada tela, com exemplos
 │   ├── deploy.md           # como publicar (Docker, variáveis, migrations, PDFs)
 │   └── roteiro-de-testes.md # passo a passo para testar tudo pelas telas
-├── docker-compose.yml   # MySQL (e, opcionalmente, a API) com Docker
+├── docker-compose.yml   # MySQL, API e site com Docker (o projeto inteiro com um comando)
 └── .gitattributes       # mantém os scripts .sh com final de linha Unix
 ```
 
-## Como rodar o projeto (primeira vez)
+## Jeito mais rápido: tudo no Docker (um comando)
+
+Para rodar o sistema inteiro sem instalar Node nem MySQL, por exemplo para testar ou apresentar.
+Só precisa do **Git** e do **Docker Desktop** aberto. Na raiz do projeto:
+
+```bash
+docker compose --profile completo up -d --build
+```
+
+Isso sobe o **MySQL**, a **API** (com as migrations e os dados de exemplo) e o **site**. A primeira
+vez demora alguns minutos; depois é rápido. Confira com `docker compose --profile completo ps`
+(os três "healthy" ou "running") e abra **http://localhost:3000**. Os logins estão na tabela
+"Acessar", mais abaixo.
+
+| Para | Comando (na raiz) |
+|---|---|
+| Ligar tudo | `docker compose --profile completo up -d --build` |
+| Desligar (os dados ficam guardados) | `docker compose --profile completo down` |
+| Apagar os dados e começar do zero | `docker compose --profile completo down -v` e ligar de novo |
+| Ver os logs da API | `docker compose --profile completo logs api` |
+
+> Se der erro de porta ocupada (3000, 3333 ou 3306), feche o `npm run dev` ou o MySQL que já está
+> rodando no seu computador e ligue de novo.
+
+## Como rodar para desenvolver (primeira vez)
+
+Para editar o código, cada parte roda fora do Docker e atualiza sozinha ao salvar um arquivo.
 
 **Pré-requisitos:** Git, Node.js 22 LTS e **Docker Desktop** aberto (ou um MySQL 8 instalado com
 usuário `root` e senha `root`).
@@ -90,16 +116,16 @@ npm run dev                   # site em http://localhost:3000
 Todos os dados do seed são **fictícios**, apenas para desenvolvimento e demonstração.
 Para testar o sistema inteiro pelas telas com esses dados, siga o `docs/roteiro-de-testes.md`.
 
-### Alternativa: API também em container
+### Mexendo só no front: API e banco no Docker
 
-Para rodar a API exatamente como em produção (sem `npm install` no backend):
+Quem só vai editar o site pode pular o passo 2 e ligar o MySQL e a API em containers:
 
 ```bash
-docker compose --profile completo up -d --build   # MySQL + API (migrations e seed automáticos)
+docker compose up -d --build api   # MySQL + API (migrations e seed automáticos)
 ```
 
-A API fica em http://localhost:3333/api; o front continua com `npm run dev`. Detalhes e o passo a
-passo para publicar o sistema em `docs/deploy.md`.
+A API fica em http://localhost:3333/api; o front continua com `npm run dev` (passo 3). O passo a
+passo para publicar o sistema está em `docs/deploy.md`.
 
 ## Dia a dia
 
