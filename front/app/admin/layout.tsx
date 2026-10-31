@@ -12,19 +12,24 @@ import {
   IconeDocumento,
   IconeExterno,
   IconeFechar,
+  IconeMapa,
   IconeMenu,
   IconeSair,
   IconeUpload,
 } from "./_componentes/icones";
 
 // Itens do menu. O título aparece na barra do celular quando a tela está aberta.
-const MENU = [
+// soAdmin: o item some para o EDITOR (a API também bloqueia essas rotas).
+const MENU: { href: string; titulo: string; mobile: string; icone: ReactNode; soAdmin?: boolean }[] = [
   { href: "/admin", titulo: "Visão geral", mobile: "Painel administrativo", icone: <IconeCasa /> },
   { href: "/admin/lancar", titulo: "Lançar valores", mobile: "Lançar valores", icone: <IconeBarras /> },
   { href: "/admin/publicar", titulo: "Publicar relatório", mobile: "Publicar relatório", icone: <IconeUpload /> },
   { href: "/admin/envios", titulo: "Envios", mobile: "Envios", icone: <IconeCaixa /> },
   { href: "/admin/estabelecimentos", titulo: "Estabelecimentos", mobile: "Estabelecimentos", icone: <IconeDocumento /> },
+  { href: "/admin/inventario", titulo: "Inventário turístico", mobile: "Inventário turístico", icone: <IconeMapa /> },
 ];
+
+const menuDo = (usuario: Usuario) => MENU.filter((m) => !m.soAdmin || usuario.papel === "ADMIN");
 
 // Layout de todas as telas do /admin: confere o login, mostra o menu lateral
 // (ou a barra + gaveta no celular) e entrega o usuário para as telas via useSessao().
@@ -73,7 +78,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   if (!sessao) return <VerificandoAcesso />;
 
-  const atual = MENU.find((m) => m.href === caminho) ?? MENU[0];
+  const atual = menuDo(sessao.usuario).find((m) => m.href === caminho) ?? MENU[0];
 
   return (
     <SessaoContext.Provider value={sessao}>
@@ -155,7 +160,7 @@ function MenuLateral({
       </div>
 
       <nav className="mt-8 flex flex-col gap-1">
-        {MENU.map((m) => {
+        {menuDo(usuario).map((m) => {
           const ativo = m.href === caminho;
           return (
             <Link
