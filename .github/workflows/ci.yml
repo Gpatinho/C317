@@ -1,0 +1,111 @@
+# Integração contínua: roda em todo pull request e em todo push na main.
+# - back-end: tipos, testes (unitários + integração com MySQL de verdade) e build
+# - front-end: lint e build de produção
+# - docker: monta a imagem da API, sobe com um MySQL e confere /api/health
+# Se algum job falhar, o PR fica marcado com ❌. O deploy (Railway/Vercel) espera este
+# workflow passar antes de publicar a main (ver docs/deploy.md, seção "CI/CD").
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Num PR, um push novo cancela a execução antiga (economiza tempo).
+# Na main nunca cancela: o deploy depende do resultado de cada commit.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  backend:
+    name: Back-end
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: observatorio_test
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      # Os testes de integração usam o banco "observatorio_test" neste mesmo MySQL
+      # (o vitest.config.ts troca o nome do banco e o global-setup aplica as migrations)
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/observatorio
+      JWT_SECRET: segredo-so-para-o-ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Tipos (TypeScript)
+        run: npm run typecheck
+      - name: Testes unitários e de integração
+        run: npm test
+      - name: Build
+        run: npm run build
+
+  front:
+    name: Front-end
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: front
+    env:
+      # O build só precisa de um endereço válido; o real é configurado na Vercel
+      NEXT_PUBLIC_API_URL: https://api.exemplo.invalid/api
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build
+
+  docker:
+    name: Imagem Docker da API
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: observatorio
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build da imagem
+        run: docker build -t observatorio-api ./backend
+      - name: Sobe a imagem como em produção e confere /api/health
+        run: |
+          docker run -d --name api --network host \
+            -e DATABASE_URL=mysql://root:root@127.0.0.1:3306/observatorio \
+            -e JWT_SECRET=segredo-do-ci-com-mais-de-32-caracteres \
+            -e FRONTEND_URL=http://localhost:3000 \
+            observatorio-api
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:3333/api/health; then echo; exit 0; fi
+            sleep 2
+          done
+          echo "A API não respondeu em 60 s. Logs do container:"
+          docker logs api
+          exit 1

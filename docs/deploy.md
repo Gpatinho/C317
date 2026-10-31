@@ -2,8 +2,7 @@
 
 O projeto já está preparado para produção: a API roda num **container Docker**, aplica as
 migrations sozinha ao iniciar e guarda os PDFs numa pasta que pode ser um volume persistente.
-Este guia mostra como publicar. O pipeline de CI/CD (GitHub Actions) é outra tarefa da equipe e
-pode chamar estes mesmos passos.
+Este guia mostra como publicar e, no fim, como o CI/CD (GitHub Actions) se encaixa no deploy.
 
 ## Como fica em produção
 
@@ -100,3 +99,33 @@ curl http://localhost:3333/api/health
 Isso sobe o MySQL e a **API em container**, exatamente como em produção (migrations automáticas,
 seed de exemplo, PDFs num volume). Para desligar: `docker compose --profile completo down`.
 O front continua rodando com `npm run dev` na pasta `front`.
+
+## CI/CD
+
+### CI — GitHub Actions (`.github/workflows/ci.yml`)
+
+Roda em **todo pull request** e em **todo push na `main`**, com três jobs:
+
+| Job | O que confere |
+|---|---|
+| **Back-end** | `typecheck`, testes unitários e de integração (com um MySQL 8 de verdade) e `build` |
+| **Front-end** | `lint` e `build` de produção do Next.js |
+| **Imagem Docker da API** | monta o `backend/Dockerfile`, sobe o container com um MySQL (migrations automáticas) e espera `/api/health` responder |
+
+O resultado aparece no próprio pull request (✅ ou ❌). Para impedir merge com CI quebrado, um
+administrador do repositório ativa em **Settings → Branches → Branch protection rules** (regra para
+`main`): *Require status checks to pass before merging*, marcando os três jobs.
+
+### CD — deploy automático da `main`
+
+O deploy usa a integração nativa das plataformas com o GitHub (nenhum token no repositório):
+
+- **Railway (API):** com o serviço ligado ao repositório, cada push na `main` gera um deploy. Em
+  **Settings** do serviço, ligue **Wait for CI**: o Railway espera o workflow `CI` terminar e
+  **pula o deploy se ele falhar**.
+- **Vercel (front):** cada push na `main` gera o deploy de produção, e cada pull request ganha um
+  link de pré-visualização. Para segurar a produção até o CI passar, em **Settings → Build and
+  Deployment → Deployment Checks**, adicione os checks do GitHub (`Front-end`, por exemplo).
+
+Fluxo completo: abrir PR → CI roda → merge na `main` → CI roda de novo → Railway e Vercel
+publicam só se tudo passou.
