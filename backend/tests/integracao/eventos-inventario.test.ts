@@ -78,6 +78,28 @@ describe("POST/PUT /api/eventos", () => {
   });
 });
 
+describe("GET/DELETE /api/eventos/:id", () => {
+  it("busca um evento e dá 404 para id inexistente", async () => {
+    const evento = await criarEvento("Festa do Padroeiro", diaRelativo(10));
+
+    const res = await request(app).get(`/api/eventos/${evento.id}`);
+    expect(res.status).toBe(200);
+    expect(res.body.nome).toBe("Festa do Padroeiro");
+    expect((await request(app).get("/api/eventos/999999")).status).toBe(404);
+  });
+
+  it("só ADMIN apaga", async () => {
+    const editor = await criarUsuario("EDITOR");
+    const admin = await criarUsuario("ADMIN");
+    const evento = await criarEvento("Show", diaRelativo(5));
+
+    expect((await request(app).delete(`/api/eventos/${evento.id}`)).status).toBe(401);
+    expect((await request(app).delete(`/api/eventos/${evento.id}`).set(editor.auth)).status).toBe(403);
+    expect((await request(app).delete(`/api/eventos/${evento.id}`).set(admin.auth)).status).toBe(204);
+    expect((await request(app).get(`/api/eventos/${evento.id}`)).status).toBe(404);
+  });
+});
+
 describe("inventário turístico (/api/atrativos)", () => {
   const atrativo = (nome: string, tipo: "ATRATIVO" | "EQUIPAMENTO" | "SERVICO", revisadoEm = new Date()) =>
     prisma.atrativo.create({ data: { nome, tipo, categoria: "Teste", revisadoEm } });
@@ -87,6 +109,21 @@ describe("inventário turístico (/api/atrativos)", () => {
     d.setMonth(d.getMonth() - meses);
     return d;
   };
+
+  it("lista as categorias sem repetir, com filtro por tipo", async () => {
+    await prisma.atrativo.createMany({
+      data: [
+        { nome: "Igreja Matriz", tipo: "ATRATIVO", categoria: "Igreja" },
+        { nome: "Capela", tipo: "ATRATIVO", categoria: "Igreja" },
+        { nome: "Rampa do Zeza", tipo: "ATRATIVO", categoria: "Pico" },
+        { nome: "Hotel Central", tipo: "EQUIPAMENTO", categoria: "Hotel" },
+      ],
+    });
+
+    expect((await request(app).get("/api/atrativos/categorias")).body).toEqual(["Hotel", "Igreja", "Pico"]);
+    expect((await request(app).get("/api/atrativos/categorias?tipo=EQUIPAMENTO")).body).toEqual(["Hotel"]);
+    expect((await request(app).get("/api/atrativos/categorias?tipo=PRAIA")).status).toBe(400);
+  });
 
   it("filtra por tipo e recusa tipo inválido", async () => {
     const igreja = await atrativo("Igreja Matriz", "ATRATIVO");

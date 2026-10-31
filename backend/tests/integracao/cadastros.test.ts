@@ -62,6 +62,13 @@ describe("indicadores", () => {
     expect(await prisma.registroIndicador.count()).toBe(0);
   });
 
+  it("busca um indicador pelo id", async () => {
+    const indicador = await criarIndicador({ nome: "Taxa de ocupação", categoria: "Hospedagem" });
+    const res = await request(app).get(`/api/indicadores/${indicador.id}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: indicador.id, nome: "Taxa de ocupação", categoria: "Hospedagem" });
+  });
+
   it("id inexistente dá 404 e id inválido dá 400", async () => {
     expect((await request(app).get("/api/indicadores/999999")).status).toBe(404);
     expect((await request(app).get("/api/indicadores/abc")).status).toBe(400);
@@ -79,6 +86,23 @@ describe("estabelecimentos", () => {
 
     const lista = await request(app).get("/api/estabelecimentos?categoria=Pousada");
     expect(lista.body).toHaveLength(1);
+  });
+
+  it("busca um pelo id, diz se tem código de acesso e nunca devolve o hash", async () => {
+    const admin = await criarUsuario("ADMIN");
+    const hotel = await criarEstabelecimento("Hotel Central");
+
+    const antes = await request(app).get(`/api/estabelecimentos/${hotel.id}`);
+    expect(antes.status).toBe(200);
+    expect(antes.body).toMatchObject({ nome: "Hotel Central", temCodigo: false });
+    expect(antes.body).not.toHaveProperty("codigoAcessoHash");
+
+    await request(app).post(`/api/estabelecimentos/${hotel.id}/codigo`).set(admin.auth);
+    const depois = await request(app).get(`/api/estabelecimentos/${hotel.id}`);
+    expect(depois.body.temCodigo).toBe(true);
+    expect(depois.body).not.toHaveProperty("codigoAcessoHash");
+
+    expect((await request(app).get("/api/estabelecimentos/999999")).status).toBe(404);
   });
 
   it("não apaga estabelecimento com valores publicados", async () => {
