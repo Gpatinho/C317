@@ -50,6 +50,36 @@ export type Evento = {
   descricao: string | null;
 };
 
+// Corpo de POST/PUT /api/eventos. Datas em "2027-07-12"; dataFim null = evento de um dia.
+export type DadosEvento = {
+  nome: string;
+  dataInicio: string;
+  dataFim: string | null;
+  local: string;
+  contato: string | null;
+  gratuito: boolean;
+  icone: string | null;
+  descricao: string | null;
+};
+
+// Envio de um estabelecimento como aparece no formulário público de coleta
+export type EnvioColeta = {
+  id: number;
+  valor: number;
+  periodo: string; // "2026-09"
+  status: StatusSubmissao;
+  motivoRejeicao?: string | null;
+  enviadoEm: string;
+  indicador: { nome: string; unidade: string };
+};
+
+// Resposta de POST /api/coleta/acesso
+export type AcessoColeta = {
+  estabelecimento: { id: number; nome: string; categoria: string };
+  indicadores: { id: number; nome: string; unidade: string; descricao: string | null }[];
+  envios: EnvioColeta[];
+};
+
 export type TipoAtrativo = "ATRATIVO" | "EQUIPAMENTO" | "SERVICO";
 
 // Item do inventário turístico (lugar que o visitante pode conhecer)
@@ -262,6 +292,22 @@ export const api = {
   atrativos: (f: { busca?: string; tipo?: TipoAtrativo; categoria?: string } = {}) =>
     request<Atrativo[]>(`/atrativos${qs(f)}`),
   atrativo: (id: number) => request<Atrativo>(`/atrativos/${id}`),
+  criarEvento: (dados: DadosEvento) =>
+    request<Evento>("/eventos", { method: "POST", body: JSON.stringify(dados) }),
+  editarEvento: (id: number, dados: Partial<DadosEvento>) =>
+    request<Evento>(`/eventos/${id}`, { method: "PUT", body: JSON.stringify(dados) }),
+  excluirEvento: (id: number) => request<void>(`/eventos/${id}`, { method: "DELETE" }),
+
+  // Formulário público de coleta: o estabelecimento se identifica pelo código (sem login)
+  acessoColeta: (codigo: string) =>
+    request<AcessoColeta>("/coleta/acesso", { method: "POST", body: JSON.stringify({ codigo }) }),
+  enviarColeta: (dados: { codigo: string; indicadorId: number; valor: number; periodo: string; observacao?: string | null }) =>
+    request<EnvioColeta>("/coleta/envios", { method: "POST", body: JSON.stringify(dados) }),
+
+  // Troca a senha de quem está logado (204 = trocou)
+  trocarSenha: (senhaAtual: string, novaSenha: string) =>
+    request<void>("/auth/senha", { method: "PUT", body: JSON.stringify({ senhaAtual, novaSenha }) }),
+
   // Itens sem conferência há mais de "meses" meses, dos mais atrasados para os mais recentes
   revisaoPendente: () =>
     request<{ meses: number; total: number; atrativos: Atrativo[] }>("/atrativos/revisao-pendente"),
