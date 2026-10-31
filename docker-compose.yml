@@ -1,6 +1,7 @@
-# Banco de dados do projeto.
-#   Só o MySQL (para rodar a API com npm run dev):  docker compose up -d
-#   MySQL + API em containers:                       docker compose --profile completo up -d --build
+# Containers do projeto. Na raiz, com o Docker Desktop aberto:
+#   Tudo (MySQL + API + site):                     docker compose --profile completo up -d --build
+#   MySQL + API (para mexer no front com npm run dev): docker compose up -d --build api
+#   Só o MySQL (para mexer na API com npm run dev):    docker compose up -d
 services:
   mysql:
     image: mysql:8
@@ -20,7 +21,7 @@ services:
 
   # API em container (perfil "completo"): igual ao que roda em produção.
   # Não liga no "docker compose up -d" simples, para não brigar pela porta 3333
-  # com quem roda a API pelo npm run dev.
+  # com quem roda a API pelo npm run dev. Para ligar só ela: docker compose up -d api
   api:
     profiles: ["completo"]
     build: ./backend
@@ -36,6 +37,20 @@ services:
       - uploads:/app/uploads   # PDFs dos relatórios sobrevivem a rebuilds do container
     depends_on:
       mysql:
+        condition: service_healthy
+
+  # Site (perfil "completo"), na porta 3000. A API_URL é a que o NAVEGADOR chama,
+  # por isso aponta para localhost:3333 (a porta da API no seu computador).
+  front:
+    profiles: ["completo"]
+    build:
+      context: ./front
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3333/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
         condition: service_healthy
 
 volumes:
