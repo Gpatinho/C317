@@ -120,9 +120,7 @@ export default function LoginAdmin() {
             />
             Lembrar de mim
           </label>
-          <a href="#" className="text-violet-600 underline hover:text-violet-700">
-            Esqueceu sua senha?
-          </a>
+          <span className="text-gray-500 text-right">Esqueceu a senha? Fale com o administrador</span>
         </div>
 
         {erro && (

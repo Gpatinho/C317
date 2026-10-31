@@ -76,6 +76,12 @@ export default function Home() {
                 Ver relatórios
               </Link>
               <Link
+                href="/coleta"
+                className="bg-white/15 hover:bg-white/25 transition text-white font-medium text-sm rounded-full px-5 py-2 border border-white/30"
+              >
+                Sou um estabelecimento
+              </Link>
+              <Link
                 href="/cadastur"
                 className="bg-white/15 hover:bg-white/25 transition text-white font-medium text-sm rounded-full px-5 py-2 border border-white/30"
               >

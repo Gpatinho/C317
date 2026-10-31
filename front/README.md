@@ -31,6 +31,7 @@ Depois de mudar o `.env.local`, pare e rode `npm run dev` de novo.
 | `/dashboard` | Indicadores em cards e gráfico, com filtros, e busca de lugares para conhecer |
 | `/relatorios` | Relatórios públicos para download |
 | `/lugares/[id]` | Página de um lugar do inventário: horários, melhor horário, época mais movimentada e Instagram (aberta pela busca do dashboard) |
+| `/coleta` | Área do estabelecimento: o hotel ou pousada entra com o código de acesso e envia os dados do mês |
 | `/cadastur` | O que são o Cadastur e a FNRH Digital, quem precisa se cadastrar e onde fazer |
 | `/login` | Acesso da equipe da SMCELT |
 | `/admin` | Visão geral do painel |
@@ -38,8 +39,10 @@ Depois de mudar o `.env.local`, pare e rode `npm run dev` de novo.
 | `/admin/publicar` | Publicar, editar e excluir relatórios em PDF |
 | `/admin/envios` | Aprovar ou rejeitar os valores enviados pelos estabelecimentos |
 | `/admin/estabelecimentos` | Cadastro dos estabelecimentos e geração do código de acesso da coleta |
+| `/admin/eventos` | Agenda de eventos (próximos e já realizados); os próximos aparecem no dashboard |
 | `/admin/inventario` | Cadastro dos lugares (horários, melhor horário, época, Instagram) e lembrete de revisão |
 | `/admin/usuarios` | Gestão da equipe com acesso ao painel (só administrador) |
+| `/admin/conta` | Minha conta: dados de quem está logado e troca da própria senha |
 
 ## Organização do código
 
