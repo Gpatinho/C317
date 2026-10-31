@@ -16,6 +16,7 @@ import {
   IconeMenu,
   IconeSair,
   IconeUpload,
+  IconeUsuarios,
 } from "./_componentes/icones";
 
 // Itens do menu. O título aparece na barra do celular quando a tela está aberta.
@@ -27,6 +28,7 @@ const MENU: { href: string; titulo: string; mobile: string; icone: ReactNode; so
   { href: "/admin/envios", titulo: "Envios", mobile: "Envios", icone: <IconeCaixa /> },
   { href: "/admin/estabelecimentos", titulo: "Estabelecimentos", mobile: "Estabelecimentos", icone: <IconeDocumento /> },
   { href: "/admin/inventario", titulo: "Inventário turístico", mobile: "Inventário turístico", icone: <IconeMapa /> },
+  { href: "/admin/usuarios", titulo: "Usuários", mobile: "Usuários", icone: <IconeUsuarios />, soAdmin: true },
 ];
 
 const menuDo = (usuario: Usuario) => MENU.filter((m) => !m.soAdmin || usuario.papel === "ADMIN");
