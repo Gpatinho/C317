@@ -2,8 +2,7 @@
 
 O projeto já está preparado para produção: a API roda num **container Docker**, aplica as
 migrations sozinha ao iniciar e guarda os PDFs numa pasta que pode ser um volume persistente.
-Este guia mostra como publicar. O pipeline de CI/CD (GitHub Actions) é outra tarefa da equipe e
-pode chamar estes mesmos passos.
+Este guia mostra como publicar e, no fim, como o CI/CD (GitHub Actions) se encaixa no deploy.
 
 ## Como fica em produção
 
@@ -100,3 +99,38 @@ curl http://localhost:3333/api/health
 Isso sobe o MySQL e a **API em container**, exatamente como em produção (migrations automáticas,
 seed de exemplo, PDFs num volume). Para desligar: `docker compose --profile completo down`.
 O front continua rodando com `npm run dev` na pasta `front`.
+
+## CI/CD
+
+O pipeline fica em `.github/workflows/ci.yml` e roda em **todo pull request** e em **todo push na
+`main`**, em três etapas. Uma etapa só começa se a anterior passou:
+
+| Etapa | Job | O que faz |
+|---|---|---|
+| **Teste** | Teste · Back-end | `typecheck` e testes unitários e de integração (com um MySQL 8 de verdade) |
+| **Teste** | Teste · Front-end | `lint` |
+| **Build** | Build · API (Docker) | monta a imagem do `backend/Dockerfile` (que compila o TypeScript), sobe com um MySQL e espera `/api/health` responder |
+| **Build** | Build · Front-end | `build` de produção do Next.js |
+| **Deploy** | Deploy | só em push na `main`: publica a API na Railway e o front na Vercel |
+
+Em pull requests o Deploy não roda: o PR só mostra se teste e build passaram (✅ ou ❌).
+Para impedir merge com o pipeline quebrado, um administrador do repositório ativa em
+**Settings → Branches → Branch protection rules** (regra para `main`) a opção
+*Require status checks to pass before merging*, marcando os jobs de Teste e Build.
+
+### Configurar o Deploy
+
+Enquanto os itens abaixo não existirem, o job Deploy passa sem publicar nada e mostra um aviso.
+Eles ficam no GitHub em **Settings → Secrets and variables → Actions**:
+
+| Nome | Tipo | Onde conseguir |
+|---|---|---|
+| `RAILWAY_TOKEN` | Secret | Railway → projeto → **Settings → Tokens** → criar um *Project Token* do ambiente de produção |
+| `RAILWAY_SERVICE` | Variable | Nome do serviço da API na Railway |
+| `VERCEL_DEPLOY_HOOK` | Secret | Vercel → projeto → **Settings → Git → Deploy Hooks** → criar um hook da branch `main` e copiar a URL |
+
+Como o deploy passa a ser feito pelo pipeline, desligue o deploy automático das plataformas para
+não publicar duas vezes: na **Railway**, desconecte o repositório do serviço (o `railway up` envia
+o código direto). Na **Vercel**, se o deploy automático da `main` continuar ligado, cada merge
+gera dois deploys do front; nesse caso, basta não criar o `VERCEL_DEPLOY_HOOK` e deixar só o
+automático.
