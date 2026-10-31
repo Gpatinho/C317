@@ -8,6 +8,7 @@ import { SessaoContext } from "./_componentes/sessao";
 import {
   IconeBarras,
   IconeCaixa,
+  IconeCalendario,
   IconeCasa,
   IconeDocumento,
   IconeExterno,
@@ -27,6 +28,7 @@ const MENU: { href: string; titulo: string; mobile: string; icone: ReactNode; so
   { href: "/admin/publicar", titulo: "Publicar relatório", mobile: "Publicar relatório", icone: <IconeUpload /> },
   { href: "/admin/envios", titulo: "Envios", mobile: "Envios", icone: <IconeCaixa /> },
   { href: "/admin/estabelecimentos", titulo: "Estabelecimentos", mobile: "Estabelecimentos", icone: <IconeDocumento /> },
+  { href: "/admin/eventos", titulo: "Eventos", mobile: "Eventos", icone: <IconeCalendario /> },
   { href: "/admin/inventario", titulo: "Inventário turístico", mobile: "Inventário turístico", icone: <IconeMapa /> },
   { href: "/admin/usuarios", titulo: "Usuários", mobile: "Usuários", icone: <IconeUsuarios />, soAdmin: true },
 ];

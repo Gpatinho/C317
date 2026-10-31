@@ -13,7 +13,7 @@ Lazer e Turismo).
 | Lado | Telas |
 |---|---|
 | **Público** | Home, dashboard de indicadores (filtros por período e setor) com busca de lugares, página de cada lugar (horários, melhor época, Instagram), relatórios para download, página do Cadastur e da FNRH Digital, área do estabelecimento para enviar os dados do mês |
-| **Painel administrativo** (`/admin`, com login) | Visão geral, lançar valores mensais, publicar relatórios, análise dos envios, estabelecimentos, inventário turístico, usuários |
+| **Painel administrativo** (`/admin`, com login) | Visão geral, lançar valores mensais, publicar relatórios, análise dos envios, estabelecimentos, eventos, inventário turístico, usuários |
 | **Estabelecimentos** | Hotéis e pousadas enviam os próprios dados com um código de acesso; a SMCELT aprova antes de publicar |
 
 ## Tecnologias

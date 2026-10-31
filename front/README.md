@@ -39,6 +39,7 @@ Depois de mudar o `.env.local`, pare e rode `npm run dev` de novo.
 | `/admin/publicar` | Publicar, editar e excluir relatórios em PDF |
 | `/admin/envios` | Aprovar ou rejeitar os valores enviados pelos estabelecimentos |
 | `/admin/estabelecimentos` | Cadastro dos estabelecimentos e geração do código de acesso da coleta |
+| `/admin/eventos` | Agenda de eventos (próximos e já realizados); os próximos aparecem no dashboard |
 | `/admin/inventario` | Cadastro dos lugares (horários, melhor horário, época, Instagram) e lembrete de revisão |
 | `/admin/usuarios` | Gestão da equipe com acesso ao painel (só administrador) |
 
