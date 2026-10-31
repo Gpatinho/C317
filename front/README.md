@@ -42,6 +42,7 @@ Depois de mudar o `.env.local`, pare e rode `npm run dev` de novo.
 | `/admin/eventos` | Agenda de eventos (próximos e já realizados); os próximos aparecem no dashboard |
 | `/admin/inventario` | Cadastro dos lugares (horários, melhor horário, época, Instagram) e lembrete de revisão |
 | `/admin/usuarios` | Gestão da equipe com acesso ao painel (só administrador) |
+| `/admin/conta` | Minha conta: dados de quem está logado e troca da própria senha |
 
 ## Organização do código
 

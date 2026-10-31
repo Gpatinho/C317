@@ -10,6 +10,7 @@ import {
   IconeCaixa,
   IconeCalendario,
   IconeCasa,
+  IconeChave,
   IconeDocumento,
   IconeExterno,
   IconeFechar,
@@ -31,6 +32,7 @@ const MENU: { href: string; titulo: string; mobile: string; icone: ReactNode; so
   { href: "/admin/eventos", titulo: "Eventos", mobile: "Eventos", icone: <IconeCalendario /> },
   { href: "/admin/inventario", titulo: "Inventário turístico", mobile: "Inventário turístico", icone: <IconeMapa /> },
   { href: "/admin/usuarios", titulo: "Usuários", mobile: "Usuários", icone: <IconeUsuarios />, soAdmin: true },
+  { href: "/admin/conta", titulo: "Minha conta", mobile: "Minha conta", icone: <IconeChave /> },
 ];
 
 const menuDo = (usuario: Usuario) => MENU.filter((m) => !m.soAdmin || usuario.papel === "ADMIN");
