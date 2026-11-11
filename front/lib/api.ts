@@ -11,6 +11,18 @@ export type Indicador = {
   agregacao: "SOMA" | "ULTIMO" | "MEDIA";
 };
 
+// Indicador com os campos de gestão (tela /admin/indicadores)
+export type IndicadorCompleto = Indicador & { ativo: boolean; coletaEstabelecimento: boolean };
+export type DadosIndicador = {
+  nome: string;
+  categoria: string;
+  unidade: string;
+  descricao: string | null;
+  agregacao: Indicador["agregacao"];
+  ativo: boolean;
+  coletaEstabelecimento: boolean;
+};
+
 type Intervalo = { inicio: string; fim: string }; // meses "2026-01"
 
 export type CardResumo = {
@@ -257,6 +269,13 @@ export const api = {
   eventos: (f: { futuros?: boolean; limite?: number } = {}) =>
     request<Evento[]>(`/eventos${qs({ futuros: f.futuros ? "true" : undefined, limite: f.limite })}`),
   indicadores: (categoria?: string) => request<Indicador[]>(`/indicadores${qs({ categoria })}`),
+  // Gestão (painel): todos=true inclui os inativos
+  todosIndicadores: () => request<IndicadorCompleto[]>("/indicadores?todos=true"),
+  criarIndicador: (dados: DadosIndicador) =>
+    request<IndicadorCompleto>("/indicadores", { method: "POST", body: JSON.stringify(dados) }),
+  editarIndicador: (id: number, dados: Partial<DadosIndicador>) =>
+    request<IndicadorCompleto>(`/indicadores/${id}`, { method: "PUT", body: JSON.stringify(dados) }),
+  excluirIndicador: (id: number) => request<void>(`/indicadores/${id}`, { method: "DELETE" }),
 
   // inicio/fim no formato "2026-01"
   resumo: (f: { inicio?: string; fim?: string; categoria?: string }) =>

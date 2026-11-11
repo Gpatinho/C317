@@ -117,9 +117,12 @@ export default function Dashboard() {
       try {
         const resumo = await api.resumo(filtro);
         // O gráfico mostra Visitantes na visão geral; com um setor escolhido,
-        // o primeiro indicador desse setor.
-        const principal =
-          resumo.cards.find((c) => c.indicador.categoria === "Visitantes") ?? resumo.cards[0];
+        
+        // o primeiro indicador desse setor. Dá preferência aos que têm dados no período,
+        // para um indicador recém-cadastrado (ainda vazio) não deixar o gráfico em branco.
+        const comDados = resumo.cards.filter((c) => c.valor !== null);
+        const opcoes = comDados.length ? comDados : resumo.cards;
+        const principal = opcoes.find((c) => c.indicador.categoria === "Visitantes") ?? opcoes[0];
         const serie = principal
           ? (await api.serie(principal.indicador.id, filtro.inicio, filtro.fim)).serie
           : undefined;
