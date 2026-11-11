@@ -218,3 +218,21 @@ O link "Esqueceu sua senha?" do login pode virar "Esqueceu a senha? Fale com o a
 ## 8. Cadastur e FNRH Digital — `/cadastur` (Maria Eduarda)
 
 Página só de conteúdo: não usa a API.
+
+---
+
+## 9. Indicadores — `/admin/indicadores` (Clara) 🔒
+
+| Ação | Rota | Corpo |
+|---|---|---|
+| Listar todos (inclusive inativos) | `GET /api/indicadores?todos=true` | – |
+| Criar | `POST /api/indicadores` | `{ "nome", "categoria", "unidade", "descricao"?, "agregacao"?, "ativo"?, "coletaEstabelecimento"? }` |
+| Editar / ativar / desativar | `PUT /api/indicadores/:id` | os campos que mudaram, ex.: `{ "ativo": false }` |
+| Excluir 👑 | `DELETE /api/indicadores/:id` | – (`204`) |
+
+- `agregacao`: `SOMA` (padrão, ex.: visitantes), `MEDIA` (ex.: taxa de ocupação) ou `ULTIMO` (ex.: leitos disponíveis).
+  Define como o dashboard junta os meses do período.
+- `coletaEstabelecimento: true` libera o indicador no formulário de coleta dos hotéis e pousadas.
+- Desativar (`ativo: false`) tira o indicador do dashboard e do Lançar valores, mas mantém os valores.
+  Excluir apaga também todos os valores lançados e os envios dele.
+- Mesmo nome no mesmo setor → `409 "Registro duplicado."` (a tela mostra "Já existe um indicador com este nome neste setor.").
