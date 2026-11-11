@@ -1,7 +1,7 @@
-# Guia da API para as telas que faltam
+# Rotas da API usadas por cada tela
 
-Para cada tela pendente: as rotas que ela usa, o que mandar e o que volta. A lista completa de
-rotas está em `backend/README.md`; exemplos prontos para testar estão em `backend/requests.http`.
+Para cada tela do sistema: as rotas que ela usa, o que mandar e o que volta. O guia foi escrito
+para orientar a construção das telas, e hoje todas já existem. A lista completa de rotas está em `backend/README.md`; exemplos prontos para testar estão em `backend/requests.http`.
 
 **Regras gerais**
 
