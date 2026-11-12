@@ -1,5 +1,9 @@
 # Deploy — colocando o Observatório no ar
 
+> **Opcional nesta entrega:** a publicação online não é obrigatória, e o sistema é apresentado
+> localmente com `docker compose --profile completo up -d --build` (veja o README da raiz).
+> Este guia fica para quando o projeto for publicado.
+
 O projeto já está preparado para produção: a API roda num **container Docker**, aplica as
 migrations sozinha ao iniciar e guarda os PDFs numa pasta que pode ser um volume persistente.
 Este guia mostra como publicar e, no fim, como o CI/CD (GitHub Actions) se encaixa no deploy.

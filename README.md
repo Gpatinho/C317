@@ -23,7 +23,7 @@ Lazer e Turismo).
 | Front-end | Next.js 16, React 19, Tailwind CSS 4, Recharts |
 | Back-end | Node.js 22, Express 5, Zod 4, JWT, bcrypt, Multer |
 | Banco de dados | MySQL 8 com Prisma 7 |
-| Ambiente | Docker (banco), GitHub Codespaces |
+| Ambiente | Docker (o projeto inteiro com um comando) |
 
 ## Estrutura do repositório
 
@@ -81,6 +81,10 @@ docker compose ps         # espere aparecer "healthy"
 
 > Se der erro de porta 3306 ocupada, já existe outro MySQL rodando na sua máquina. Desligue-o ou
 > use o seu MySQL em vez do Docker (com usuário e senha `root`, ou ajuste o `backend/.env`).
+> **GitHub Codespaces:** o banco sobe pelo Docker, mas a API e o front não conseguem se comunicar
+> com ele por dentro dos containers. No Codespaces, use só o banco no Docker e rode a API e o front
+> com `npm run dev` (veja a seção abaixo). Para apresentar o projeto inteiro, use um computador
+> com Docker Desktop.
 
 ### 2. Back-end (terminal 1)
 

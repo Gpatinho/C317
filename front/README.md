@@ -25,6 +25,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3333/api
 ```
 
 No GitHub Codespaces, use a URL da porta 3333 do Codespace (com a porta marcada como **Public**).
+O Docker completo (`--profile completo`) não funciona no Codespaces. Veja o aviso no README da raiz.
 Depois de mudar o `.env.local`, pare e rode `npm run dev` de novo.
 
 ## Telas

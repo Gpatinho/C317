@@ -15,7 +15,7 @@ services:
     volumes:
       - mysql-dados:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot"]
       interval: 5s
       retries: 20
 
@@ -29,7 +29,7 @@ services:
       DATABASE_URL: mysql://root:root@mysql:3306/observatorio
       # Segredo só para rodar localmente. Em produção, gere um próprio (veja docs/deploy.md).
       JWT_SECRET: ${JWT_SECRET:-segredo-local-de-desenvolvimento-nao-usar-em-producao}
-      FRONTEND_URL: http://localhost:3000
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       RODAR_SEED: "true"
     ports:
       - "3333:3333"
@@ -46,7 +46,7 @@ services:
     build:
       context: ./front
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:3333/api
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333/api}
     ports:
       - "3000:3000"
     depends_on:
