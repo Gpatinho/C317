@@ -72,11 +72,23 @@ front/
   `layout.tsx` (use `useSessao()`).
 - As rotas que cada tela pendente vai usar estão em `docs/guia-api-front.md`.
 
+## Testes
+
+Feitos com **Vitest**, ficam em `tests/` e cobrem as funções puras do front, como as de
+`app/admin/_componentes/formato.ts` (ler "29.600" e "83,5", formatar meses e valores).
+Não precisam da API nem do banco.
+
+| Comando | O que faz |
+|---|---|
+| `npm test` | Roda todos os testes uma vez (é o que o CI roda em todo PR) |
+| `npm run test:watch` | Roda de novo a cada arquivo salvo |
+
 ## Antes de abrir um pull request
 
 ```bash
 npx tsc --noEmit
 npx eslint app lib
+npm test
 ```
 
-Os dois não devem mostrar nada.
+Os dois primeiros não devem mostrar nada, e o `npm test` deve terminar com todos os testes passando.

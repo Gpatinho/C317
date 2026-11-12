@@ -143,7 +143,7 @@ passo para publicar o sistema está em `docs/deploy.md`.
 ## Como contribuir
 
 1. Atualize a `main` (`git checkout main` e `git pull`) e crie uma branch: `feature/<nome-curto>`.
-2. Antes de enviar, rode `npx tsc --noEmit` (e `npx eslint app lib` no front).
+2. Antes de enviar, rode `npx tsc --noEmit` e `npm test` (e `npx eslint app lib` no front).
 3. Faça o push e abra um **pull request**; outra pessoa da equipe revisa antes do merge.
 
 ## Equipe

@@ -59,6 +59,8 @@ jobs:
       - run: npm ci
       - name: Lint
         run: npm run lint
+      - name: Testes unitários
+        run: npm test
 
   build-api:
     name: Build · API (Docker)

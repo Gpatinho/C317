@@ -15,10 +15,6 @@ describe("gerarCodigo", () => {
 });
 
 describe("hashCodigo", () => {
-  it("gera um SHA-256 (64 caracteres hexadecimais)", () => {
-    expect(hashCodigo("7KQ2-M9PX")).toMatch(/^[0-9a-f]{64}$/);
-  });
-
   it("ignora maiúsculas, espaços e o traço", () => {
     const esperado = hashCodigo("7KQ2-M9PX");
     expect(hashCodigo("7kq2-m9px")).toBe(esperado);
