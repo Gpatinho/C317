@@ -11,6 +11,17 @@ async function criarEvento(nome: string, dataInicio: string, dataFim?: string) {
 }
 
 describe("GET /api/eventos", () => {
+  // Lista do painel: mostra também os que já passaram, começando pelo mais recente
+  it("sem filtro traz todos, do mais recente para o mais antigo", async () => {
+    const passado = await criarEvento("Já passou", diaRelativo(-10));
+    const distante = await criarEvento("Daqui a um mês", diaRelativo(30));
+    const hoje = await criarEvento("Hoje", diaRelativo(0));
+
+    const res = await request(app).get("/api/eventos");
+    expect(res.status).toBe(200);
+    expect(res.body.map((e: { id: number }) => e.id)).toEqual([distante.id, hoje.id, passado.id]);
+  });
+
   it("futuros=true traz só o que não terminou, do mais próximo ao mais distante", async () => {
     await criarEvento("Já passou", diaRelativo(-10));
     await criarEvento("Terminou ontem", diaRelativo(-5), diaRelativo(-1));

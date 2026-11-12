@@ -59,6 +59,31 @@ describe("POST /api/coleta/acesso", () => {
     expect(res.body.envios).toEqual([]);
   });
 
+  it("o histórico mostra só os 20 envios mais recentes do próprio estabelecimento", async () => {
+    const agora = Date.now();
+    // 25 envios deste estabelecimento, um por minuto (valor = ordem de envio)
+    await prisma.submissao.createMany({
+      data: Array.from({ length: 25 }, (_, i) => ({
+        estabelecimentoId,
+        indicadorId,
+        valor: i,
+        periodo: new Date(Date.UTC(2024, i, 1)),
+        enviadoEm: new Date(agora - (25 - i) * 60_000),
+      })),
+    });
+    // O envio mais novo de todos é de outro estabelecimento e não pode aparecer
+    const outro = await criarEstabelecimento("Pousada Serra");
+    await prisma.submissao.create({
+      data: { estabelecimentoId: outro.id, indicadorId, valor: 999, periodo: new Date("2026-08-01"), enviadoEm: new Date(agora) },
+    });
+
+    const res = await request(app).post("/api/coleta/acesso").send({ codigo });
+    expect(res.status).toBe(200);
+    expect(res.body.envios.map((e: { valor: number }) => e.valor)).toEqual(
+      Array.from({ length: 20 }, (_, i) => 24 - i), // 24, 23, ..., 5
+    );
+  });
+
   it("código errado dá 401", async () => {
     const res = await request(app).post("/api/coleta/acesso").send({ codigo: "ZZZZ-ZZZZ" });
     expect(res.status).toBe(401);
@@ -156,6 +181,18 @@ describe("análise dos envios (/api/submissoes)", () => {
 
     const res = await request(app).get("/api/submissoes?status=PENDENTE").set(admin.auth);
     expect(res.body.map((s: { id: number }) => s.id)).toEqual([primeiro.body.id, segundo.body.id]);
+  });
+
+  it("filtra os envios por estabelecimento", async () => {
+    const outro = await criarEstabelecimento("Pousada Serra");
+    await prisma.submissao.create({
+      data: { estabelecimentoId: outro.id, indicadorId, valor: 50, periodo: new Date("2026-08-01") },
+    });
+    const meu = await enviar();
+
+    const res = await request(app).get(`/api/submissoes?estabelecimentoId=${estabelecimentoId}`).set(admin.auth);
+    expect(res.status).toBe(200);
+    expect(res.body.map((s: { id: number }) => s.id)).toEqual([meu.body.id]);
   });
 
   it("envio inexistente dá 404", async () => {
