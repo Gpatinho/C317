@@ -25,6 +25,14 @@ describe("PUT /api/auth/senha", () => {
     expect(res.body.erro).toBe("A senha atual está incorreta.");
   });
 
+  it("com a senha atual errada nada muda: a senha antiga continua entrando", async () => {
+    const { usuario, auth } = await criarUsuario();
+    await request(app).put("/api/auth/senha").set(auth).send({ senhaAtual: "errada", novaSenha: "novaSenha456" });
+
+    const login = await request(app).post("/api/auth/login").send({ email: usuario.email, senha: SENHA_PADRAO });
+    expect(login.status).toBe(200);
+  });
+
   it("valida a nova senha: mínimo de 6 caracteres e diferente da atual", async () => {
     const { auth } = await criarUsuario();
     const curta = await request(app).put("/api/auth/senha").set(auth).send({ senhaAtual: SENHA_PADRAO, novaSenha: "123" });
