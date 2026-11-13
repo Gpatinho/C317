@@ -87,6 +87,17 @@ describe("POST/PUT /api/eventos", () => {
     const res = await request(app).put(`/api/eventos/${evento.id}`).set(auth).send({ dataFim: null });
     expect(res.body.dataFim).toBeNull();
   });
+
+  it("criar e editar exigem login", async () => {
+    const evento = await criarEvento("Feira", "2026-08-20");
+    expect((await request(app).post("/api/eventos").send({ nome: "Show", dataInicio: "2026-08-01", local: "Praça" })).status).toBe(401);
+    expect((await request(app).put(`/api/eventos/${evento.id}`).send({ local: "Estádio" })).status).toBe(401);
+  });
+
+  it("editar um evento que não existe dá 404", async () => {
+    const { auth } = await criarUsuario();
+    expect((await request(app).put("/api/eventos/999999").set(auth).send({ local: "Estádio" })).status).toBe(404);
+  });
 });
 
 describe("GET/DELETE /api/eventos/:id", () => {
@@ -120,6 +131,14 @@ describe("inventário turístico (/api/atrativos)", () => {
     d.setMonth(d.getMonth() - meses);
     return d;
   };
+
+  it("busca um item pelo id e dá 404 para id inexistente", async () => {
+    const item = await atrativo("Pico do Gavião", "ATRATIVO");
+    const res = await request(app).get(`/api/atrativos/${item.id}`);
+    expect(res.status).toBe(200);
+    expect(res.body.nome).toBe("Pico do Gavião");
+    expect((await request(app).get("/api/atrativos/999999")).status).toBe(404);
+  });
 
   it("lista as categorias sem repetir, com filtro por tipo", async () => {
     await prisma.atrativo.createMany({
