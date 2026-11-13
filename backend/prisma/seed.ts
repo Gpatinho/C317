@@ -1,6 +1,6 @@
 /**
  * Popula o banco com os usuários de teste e dados de EXEMPLO.
- * ATENÇÃO: todos os valores abaixo são FICTÍCIOS, apenas para desenvolver,
+ * ATENÇÃO: todos os valores abaixo git checkout -b feature/dados-reais-lugaressão FICTÍCIOS, apenas para desenvolver,
  * testar e demonstrar o sistema. Antes de usar com dados reais da SMCELT,
  * apague-os pelo painel ou recrie o banco sem rodar o seed.
  *
@@ -312,7 +312,6 @@ async function main() {
   if ((await prisma.atrativo.count()) === 0) {
     await prisma.atrativo.createMany({
       data: [
-        { nome: "Igreja Matriz de Santa Rita", tipo: "ATRATIVO", categoria: "Igreja", endereco: "Praça Santa Rita, Centro" },
         { nome: "Rampa do Zeza", tipo: "ATRATIVO", categoria: "Pico", descricao: "Rampa de voo livre com vista da cidade" },
         { nome: "Restaurante Exemplo (fictício)", tipo: "EQUIPAMENTO", categoria: "Restaurante" },
         { nome: HOTEL, tipo: "EQUIPAMENTO", categoria: "Hotel" },
@@ -325,31 +324,53 @@ async function main() {
   }
 
   // Lugares com as informações para o visitante (busca do dashboard e página do lugar).
-  // Horários e períodos são EXEMPLOS para a demonstração: a SMCELT confere e corrige.
-  const AVISO = " Informações de visita de exemplo, a confirmar pela SMCELT.";
+  // Dados levantados em novembro de 2026 (sites oficiais, Instagram e Google Maps).
+  // A SMCELT pode atualizar tudo pela tela Inventário turístico.
   const lugaresComInfo = [
-    { nome: "Santo Cruzeiro", tipo: "ATRATIVO" as const, categoria: "Mirante",
-      descricao: "Cruzeiro no alto do morro, com vista panorâmica da cidade." + AVISO,
-      horarioFuncionamento: "Todos os dias (área ao ar livre)",
-      melhorHorario: "Fim da tarde, para ver o pôr do sol",
-      periodoMovimentado: "Fins de semana, feriados e Semana Santa" },
+    { nome: "Mirante do Santo Cruzeiro", tipo: "ATRATIVO" as const, categoria: "Mirante",
+      descricao:
+        "Ponto turístico natural e religioso no alto de um morro, com vista panorâmica da cidade e um dos " +
+        "pores do sol mais bonitos de Santa Rita. Área ao ar livre, sem comércio nem banheiros no alto.",
+      endereco: "Próximo à Rua do Cruzeiro, bairro Fortes / Vila das Fontes (cerca de 2 km do Centro)",
+      horarioFuncionamento: "Aberto 24 horas (área ao ar livre, com pouca iluminação à noite)",
+      melhorHorario: "Nascer do sol (5h30 às 6h30) ou pôr do sol (17h às 18h30)",
+      periodoMovimentado: "Semana Santa (procissões) e fins de semana de abril a agosto, com céu limpo" },
+    { nome: "Santuário de Santa Rita de Cássia (Igreja Matriz)", tipo: "ATRATIVO" as const, categoria: "Igreja",
+      descricao:
+        "Principal cartão-postal histórico e religioso do Centro. Guarda a centenária imagem de Santa Rita vinda de " +
+        "Portugal, a urna em tamanho natural e uma relíquia da santa.",
+      endereco: "Praça Santa Rita, s/n – Centro",
+      horarioFuncionamento: "Missas de segunda a sábado às 19h; domingos e todo dia 22 às 7h, 9h, 17h e 19h",
+      melhorHorario: "Visita: dias de semana, das 9h às 11h ou das 14h às 17h. Missa: domingo às 9h ou 19h",
+      periodoMovimentado: "Festa de Santa Rita em maio (dia 22 é feriado municipal), Semana Santa e todo dia 22",
+      instagram: "santuario_santarita_srs" },
     { nome: "Inatel – Instituto Nacional de Telecomunicações", tipo: "ATRATIVO" as const, categoria: "Tecnologia e educação",
-      descricao: "Instituição de ensino e pesquisa em engenharia e tecnologia, referência no Vale da Eletrônica." + AVISO,
+      descricao:
+        "Instituição de ensino e pesquisa em engenharia e tecnologia fundada em 1965, referência no Vale da Eletrônica.",
       endereco: "Av. João de Camargo, 510 – Centro",
-      horarioFuncionamento: "Segunda a sexta, 8h às 22h; visitas ao campus com agendamento",
-      melhorHorario: "Dias úteis pela manhã, com visita agendada",
-      periodoMovimentado: "Semestre letivo (março a junho e agosto a novembro) e semana da Fetin",
-      instagram: "inatel" },
-    { nome: "Campão de Eventos", tipo: "ATRATIVO" as const, categoria: "Espaço de eventos",
-      descricao: "Espaço aberto que recebe shows, festas e eventos da cidade." + AVISO,
-      horarioFuncionamento: "Aberto em dias de evento",
-      melhorHorario: "Noites de evento, chegando cedo para evitar filas",
-      periodoMovimentado: "Carnaval, festas juninas e festas da cidade" },
-    { nome: "Concentração do Bloco do Urso", tipo: "ATRATIVO" as const, categoria: "Carnaval",
-      descricao: "Ponto de concentração do Bloco do Urso no carnaval de Santa Rita do Sapucaí." + AVISO,
-      horarioFuncionamento: "Durante o carnaval, no dia e horário divulgados pela organização do bloco",
-      melhorHorario: "Início da concentração, no começo da tarde",
-      periodoMovimentado: "Carnaval (fevereiro ou março)" },
+      horarioFuncionamento: "Segunda a sexta, 8h às 22h; atendimento administrativo em horário comercial",
+      melhorHorario: "Dias úteis, das 9h às 11h ou das 14h às 17h",
+      periodoMovimentado: "Semestre letivo (fevereiro a junho e agosto a novembro), HackTown, Fetin e Connect Summit",
+      instagram: "inatel.tecnologias" },
+    { nome: "Campão – Centro Municipal de Eventos", tipo: "ATRATIVO" as const, categoria: "Espaço de eventos",
+      descricao:
+        "Parque municipal de eventos, conhecido como Campão. Espaço público ao ar livre para lazer e caminhadas, " +
+        "que recebe a Festa de Santa Rita e outros grandes eventos da cidade.",
+      endereco: "Rua Maria da Conceição Ribeiro, entre os bairros Jardim das Palmeiras e Fernandes",
+      horarioFuncionamento: "Todos os dias para lazer; em dias de evento, conforme a programação",
+      melhorHorario: "Lazer: 6h às 9h ou a partir das 17h. Eventos: a partir das 20h",
+      periodoMovimentado: "Festa de Santa Rita (maio, aniversário da cidade) e eventos ao longo do ano",
+      contato: "Agenda divulgada pela Prefeitura",
+      instagram: "prefeiturasrs" },
+    { nome: "Bloco do Urso (Cidade do Urso)", tipo: "ATRATIVO" as const, categoria: "Carnaval",
+      descricao:
+        "Um dos carnavais mais conhecidos do sul de Minas. Não há desfile de rua: a festa acontece dentro da " +
+        "Cidade do Urso, com venda de ingressos.",
+      endereco: "Cidade do Urso – Av. Embaixador Bilac Pinto, s/n",
+      horarioFuncionamento: "Nos 4 dias de carnaval (sábado a terça), portões a partir das 17h ou 18h até a madrugada",
+      melhorHorario: "Na abertura dos portões, para evitar filas",
+      periodoMovimentado: "Carnaval (fevereiro ou março)",
+      instagram: "blocourso" },
   ];
   let novosLugares = 0;
   for (const l of lugaresComInfo) {
