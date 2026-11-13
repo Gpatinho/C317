@@ -99,22 +99,20 @@ jobs:
     name: Build · Front-end
     needs: test-front
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: front
-    env:
-      NEXT_PUBLIC_API_URL: https://api.exemplo.invalid/api
-      NEXT_TELEMETRY_DISABLED: 1
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: front/package-lock.json
-      - run: npm ci
-      - name: Build
-        run: npm run build
+      - name: Build da imagem
+        run: docker build -t observatorio-front ./front
+      - name: Sobe a imagem e confere se o site responde
+        run: |
+          docker run -d --name front -p 3000:3000 observatorio-front
+          for i in $(seq 1 30); do
+            if curl -fs -o /dev/null http://localhost:3000; then echo "Site respondeu"; exit 0; fi
+            sleep 2
+          done
+          echo "O site não respondeu em 60 s. Logs do container:"
+          docker logs front
+          exit 1
 
   deploy:
     name: Deploy
