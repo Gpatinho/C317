@@ -4,24 +4,15 @@ import { useState, type FormEvent } from "react";
 import { ApiError, api } from "@/lib/api";
 import { IconeAlerta, IconeCheck } from "../_componentes/icones";
 import { useSessao } from "../_componentes/sessao";
+import { validar, type CamposSenha, type ErrosSenha } from "./validacao";
 
 // Dados de quem está logado e troca da própria senha (PUT /api/auth/senha).
 // Esqueceu a senha? Um administrador redefine em /admin/usuarios.
 
-type Campos = { senhaAtual: string; novaSenha: string; confirmar: string };
-type Erros = Partial<Record<keyof Campos, string>>;
+type Campos = CamposSenha;
+type Erros = ErrosSenha;
 
 const VAZIO: Campos = { senhaAtual: "", novaSenha: "", confirmar: "" };
-
-// Mesmas regras do back-end (trocarSenhaSchema), mais a confirmação
-function validar(c: Campos) {
-  const erros: Erros = {};
-  if (!c.senhaAtual) erros.senhaAtual = "Informe a senha atual.";
-  if (c.novaSenha.length < 6) erros.novaSenha = "A nova senha precisa ter pelo menos 6 caracteres.";
-  else if (c.novaSenha === c.senhaAtual) erros.novaSenha = "A nova senha precisa ser diferente da atual.";
-  if (!erros.novaSenha && c.confirmar !== c.novaSenha) erros.confirmar = "As senhas não são iguais.";
-  return erros;
-}
 
 const classeCampo = (erro?: string) =>
   `w-full bg-white border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 disabled:bg-gray-100 ${
