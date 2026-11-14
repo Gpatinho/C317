@@ -5,6 +5,7 @@ import { ApiError, api, type DadosEstabelecimento, type Estabelecimento } from "
 import { IconeAlerta, IconeLapis, IconeLixeira, IconePrancheta } from "../_componentes/icones";
 import { Modal } from "../_componentes/modal";
 import { useSessao } from "../_componentes/sessao";
+import { limpar, validar } from "./validacao";
 
 const CATEGORIAS = ["Hotel", "Pousada", "Hostel", "Chalé", "Restaurante"]; // sugestões; aceita qualquer texto
 
@@ -14,22 +15,6 @@ const classeCampo = (erro?: string) =>
   }`;
 
 const VAZIO: DadosEstabelecimento = { nome: "", categoria: "", endereco: "", regiao: "" };
-
-// Mesmas regras do back-end (estabelecimentoSchema)
-function validar(d: DadosEstabelecimento) {
-  const erros: { nome?: string; categoria?: string } = {};
-  if (d.nome.trim().length < 2) erros.nome = "Informe o nome do estabelecimento.";
-  if (d.categoria.trim().length < 2) erros.categoria = "Informe a categoria (ex.: Hotel).";
-  return erros;
-}
-
-// Campos vazios viram null para apagar o valor no banco
-const limpar = (d: DadosEstabelecimento): DadosEstabelecimento => ({
-  nome: d.nome.trim(),
-  categoria: d.categoria.trim(),
-  endereco: d.endereco?.trim() || null,
-  regiao: d.regiao?.trim() || null,
-});
 
 type Dados = { tentativa: number; lista?: Estabelecimento[]; erro?: boolean };
 

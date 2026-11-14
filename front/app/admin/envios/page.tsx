@@ -6,6 +6,7 @@ import { formatarData, formatarMesLongo, formatarValor } from "../_componentes/f
 import { IconeAlerta, IconeCaixa } from "../_componentes/icones";
 import { Modal } from "../_componentes/modal";
 import { useSessao } from "../_componentes/sessao";
+import { validarMotivo } from "./validacao";
 
 const ABAS: { status: StatusSubmissao; titulo: string }[] = [
   { status: "PENDENTE", titulo: "Pendentes" },
@@ -211,7 +212,8 @@ function ModalRejeitar({
 
   async function rejeitar(e: FormEvent) {
     e.preventDefault();
-    if (motivo.trim().length < 3) return setErro("Explique o motivo da rejeição.");
+    const invalido = validarMotivo(motivo);
+    if (invalido) return setErro(invalido);
     setEnviando(true);
     setErro("");
     try {

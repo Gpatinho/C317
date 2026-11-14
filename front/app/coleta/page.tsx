@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { ApiError, api, type AcessoColeta, type EnvioColeta, type StatusSubmissao } from "@/lib/api";
-import { formatarData, formatarMes, formatarValor, lerNumero, mesDe, ultimosMeses } from "../admin/_componentes/formato";
+import { formatarData, formatarMes, formatarValor, mesDe, ultimosMeses } from "../admin/_componentes/formato";
+import { validarCodigo, validarEnvio, type ErrosEnvio } from "./validacao";
 
 // Formulário público de coleta (item 6 da proposta): o hotel ou pousada entra com o código
 // de acesso gerado pela SMCELT e envia o valor do mês. Nada vai direto para o dashboard:
@@ -92,8 +93,9 @@ function Entrada({ aviso, onEntrou }: { aviso: string; onEntrou: (codigo: string
   async function entrar(e: FormEvent) {
     e.preventDefault();
     const c = codigo.trim();
-    if (c.replace(/[^a-z0-9]/gi, "").length < 8) {
-      setErro("Digite o código completo, como CENT-2026.");
+    const invalido = validarCodigo(c);
+    if (invalido) {
+      setErro(invalido);
       return;
     }
     setEntrando(true);
@@ -164,7 +166,7 @@ function Formulario({
   const [periodo, setPeriodo] = useState(mesAnterior());
   const [valor, setValor] = useState("");
   const [observacao, setObservacao] = useState("");
-  const [erros, setErros] = useState<{ indicador?: string; valor?: string }>({});
+  const [erros, setErros] = useState<ErrosEnvio>({});
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [sucesso, setSucesso] = useState<EnvioColeta>();
@@ -175,12 +177,7 @@ function Formulario({
     e.preventDefault();
     setErro("");
     setSucesso(undefined);
-    const numero = lerNumero(valor);
-    const v: typeof erros = {};
-    if (!indicador) v.indicador = "Escolha o que você vai informar.";
-    if (numero === null) v.valor = "Informe o valor, só com números.";
-    else if (numero < 0) v.valor = "O valor não pode ser negativo.";
-    else if (indicador?.unidade === "%" && numero > 100) v.valor = "Uma porcentagem não pode passar de 100.";
+    const { erros: v, numero } = validarEnvio(indicador, valor);
     setErros(v);
     if (Object.keys(v).length || numero === null || !indicador) return;
 
