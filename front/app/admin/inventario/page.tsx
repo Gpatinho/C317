@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { ApiError, api, type Atrativo, type DadosAtrativo, type TipoAtrativo } from "@/lib/api";
+import { ApiError, api, type Atrativo, type TipoAtrativo } from "@/lib/api";
 import { formatarData } from "../_componentes/formato";
 import { IconeAlerta, IconeCheck, IconeLapis, IconeLixeira, IconeMapa, IconeRelogio } from "../_componentes/icones";
 import { Modal } from "../_componentes/modal";
 import { useSessao } from "../_componentes/sessao";
+import { limpar, paraCampos, validar, type CamposAtrativo, type ErrosAtrativo } from "./validacao";
 
 // Inventário turístico: os lugares que aparecem na busca do dashboard e na página /lugares/[id].
 // Também mostra os itens sem conferência há mais de 12 meses, para a equipe revisar.
@@ -18,8 +19,8 @@ const TIPOS: { valor: TipoAtrativo; rotulo: string; ajuda: string }[] = [
 ];
 const ROTULO_TIPO = Object.fromEntries(TIPOS.map((t) => [t.valor, t.rotulo])) as Record<TipoAtrativo, string>;
 
-type Campos = Record<Exclude<keyof DadosAtrativo, "tipo">, string> & { tipo: TipoAtrativo };
-type Erros = Partial<Record<keyof Campos, string>>;
+type Campos = CamposAtrativo;
+type Erros = ErrosAtrativo;
 
 const VAZIO: Campos = {
   nome: "",
@@ -32,46 +33,6 @@ const VAZIO: Campos = {
   melhorHorario: "",
   periodoMovimentado: "",
   instagram: "",
-};
-
-const paraCampos = (a: Atrativo): Campos => ({
-  nome: a.nome,
-  tipo: a.tipo,
-  categoria: a.categoria,
-  descricao: a.descricao ?? "",
-  endereco: a.endereco ?? "",
-  contato: a.contato ?? "",
-  horarioFuncionamento: a.horarioFuncionamento ?? "",
-  melhorHorario: a.melhorHorario ?? "",
-  periodoMovimentado: a.periodoMovimentado ?? "",
-  instagram: a.instagram ? `@${a.instagram}` : "",
-});
-
-// Mesmas regras do back-end (atrativoSchema)
-function validar(c: Campos) {
-  const erros: Erros = {};
-  if (c.nome.trim().length < 2) erros.nome = "Informe o nome do lugar.";
-  if (c.categoria.trim().length < 2) erros.categoria = "Informe a categoria (ex.: Mirante).";
-  const insta = c.instagram.trim().replace(/^(https?:\/\/)?(www\.)?instagram\.com\//i, "").replace(/^@/, "").replace(/\/.*$/, "");
-  if (insta && !/^[A-Za-z0-9._]{1,30}$/.test(insta)) erros.instagram = "Use só o nome do perfil, ex.: @inatel";
-  return erros;
-}
-
-// Campos opcionais vazios viram null para apagar o valor no banco
-const limpar = (c: Campos): DadosAtrativo => {
-  const opcional = (v: string) => v.trim() || null;
-  return {
-    nome: c.nome.trim(),
-    tipo: c.tipo,
-    categoria: c.categoria.trim(),
-    descricao: opcional(c.descricao),
-    endereco: opcional(c.endereco),
-    contato: opcional(c.contato),
-    horarioFuncionamento: opcional(c.horarioFuncionamento),
-    melhorHorario: opcional(c.melhorHorario),
-    periodoMovimentado: opcional(c.periodoMovimentado),
-    instagram: c.instagram.trim(), // a API aceita "@perfil", "perfil" ou o link, e "" apaga
-  };
 };
 
 const classeCampo = (erro?: string) =>

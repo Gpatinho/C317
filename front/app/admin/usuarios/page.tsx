@@ -6,6 +6,7 @@ import { formatarData } from "../_componentes/formato";
 import { IconeAlerta, IconeLapis, IconeLixeira, IconeUsuarios } from "../_componentes/icones";
 import { Modal } from "../_componentes/modal";
 import { useSessao } from "../_componentes/sessao";
+import { validar, type CamposUsuario, type ErrosUsuario } from "./validacao";
 
 // Gestão da equipe da SMCELT que acessa o painel. Só o ADMIN entra aqui (a API também confere).
 
@@ -14,17 +15,8 @@ const PAPEIS: { valor: Papel; rotulo: string; ajuda: string }[] = [
   { valor: "ADMIN", rotulo: "Administrador", ajuda: "Pode tudo, inclusive excluir e gerenciar usuários." },
 ];
 
-type Campos = { nome: string; email: string; papel: Papel; senha: string };
-type Erros = Partial<Record<keyof Campos, string>>;
-
-// Mesmas regras do back-end (usuarioSchema). Na edição a senha é opcional.
-function validar(c: Campos, novo: boolean) {
-  const erros: Erros = {};
-  if (c.nome.trim().length < 2) erros.nome = "Informe o nome.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email.trim())) erros.email = "Informe um e-mail válido.";
-  if ((novo || c.senha) && c.senha.length < 6) erros.senha = "A senha precisa ter pelo menos 6 caracteres.";
-  return erros;
-}
+type Campos = CamposUsuario;
+type Erros = ErrosUsuario;
 
 const classeCampo = (erro?: string) =>
   `w-full bg-white border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 disabled:bg-gray-100 ${
